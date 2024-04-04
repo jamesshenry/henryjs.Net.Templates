@@ -1,42 +1,27 @@
 using System.Text.Json;
 using Microsoft.Extensions.Options;
-using MyCliTemplate.Lib.Services;
+using MyCliTemplate.Lib;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
 namespace MyCliTemplate.Cli.Commands;
 
-public class HelloCommand(IAnsiConsole ansiConsole, IOptions<NestedSettings> nestedSetttings) : AsyncCommand<HelloCommandSettings>
+public class HelloCommand(IAnsiConsole ansiConsole, IOptions<NestedSettings> nestedSetttings) : AsyncCommand<HelloCommand.Settings>
 {
+    public class Settings : CommandSettings
+    {
+    }
+
     private readonly IAnsiConsole _console = ansiConsole;
     private readonly NestedSettings _nestedSettings = nestedSetttings.Value;
 
-    public override async Task<int> ExecuteAsync(CommandContext context, HelloCommandSettings settings)
+    public override async Task<int> ExecuteAsync(CommandContext context, Settings settings)
     {
         _console.MarkupLine("[green]Hello[/] [magenta]there![/]");
 
         _console.MarkupLine($"In appsettings.json value of NestedSettings:");
         _console.WriteLine(JsonSerializer.Serialize(_nestedSettings, new JsonSerializerOptions { WriteIndented = true }));
 
-        return await Task.FromResult(0);
-    }
-}
-
-public class HelloCommandSettings : CommandSettings
-{
-}
-
-public class OtherCommand(IAnsiConsole ansiConsole, ISampleService service) : AsyncCommand
-{
-    private readonly IAnsiConsole _console = ansiConsole;
-    private readonly ISampleService _service = service;
-
-    public override async Task<int> ExecuteAsync(CommandContext context)
-    {
-        _console.MarkupLine("[red]I am the other command[/] [blue]that has no options or flags.[/]");
-        _console.MarkupLine("[yellow]But I do use the SampleService[/]");
-
-        _service.DoWork();
         return await Task.FromResult(0);
     }
 }

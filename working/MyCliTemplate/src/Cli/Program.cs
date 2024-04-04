@@ -1,10 +1,10 @@
-﻿
-using Community.Extensions.Spectre.Cli.Hosting;
+﻿using Community.Extensions.Spectre.Cli.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MyCliTemplate.Cli.Commands;
+using MyCliTemplate.Lib;
 using MyCliTemplate.Lib.Services;
 using Spectre.Console.Cli;
 

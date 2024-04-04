@@ -15,8 +15,3 @@ public class SampleService : ISampleService
         return true;
     }
 }
-
-public interface ISampleService
-{
-    bool DoWork();
-}
