@@ -8,6 +8,9 @@
         "Debug",
         "Release"
       ]
+    },
+    "NugetApiKey": {
+      "type": "string"
     }
   },
   "definitions": {
@@ -36,6 +39,7 @@
       "enum": [
         "Clean",
         "Compile",
+        "NugetUpload",
         "Pack",
         "Restore"
       ]

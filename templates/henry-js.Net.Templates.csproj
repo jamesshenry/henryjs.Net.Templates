@@ -3,13 +3,13 @@
   <PropertyGroup>
     <!-- The package metadata. Fill in the properties marked as TODO below -->
     <!-- Follow the instructions on https://learn.microsoft.com/en-us/nuget/create-packages/package-authoring-best-practices -->
-    <PackageId>henry_js.Net.Templates</PackageId>
+    <PackageId>henryjs.Net.Templates</PackageId>
     <Title>henry-js.Net.Templates</Title>
     <Authors>henry-js</Authors>
     <Description>Collection of .NET templates</Description>
     <PackageTags>templates</PackageTags>
-    <PackageProjectUrl>TODO: include a link to an associated project, repository, or company website</PackageProjectUrl>
-
+    <PackageProjectUrl>https://github.com/henry-js/henry-js.Net.Templates</PackageProjectUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <!-- Keep package type as 'Template' to show the package as a template package on nuget.org and make your template available in dotnet new search.-->
     <PackageType>Template</PackageType>
     <TargetFramework>net8.0</TargetFramework>
