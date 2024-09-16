@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json.schemastore.org/template",
+  "author": "henry-js",
+  "classifications": [
+    "Common",
+    "Console"
+  ],
+  "groupIdentity": "henry-js.Net.Templates.Cli",
+  "identity": "henry-js.Net.Templates.SystemCommandLineConsole",
+  "name": "System.Commandline Console",
+  "precedence": "1",
+  "preferNameDirectory": true,
+  "shortName": "cmd-console",
+  "sourceName": "SystemCommandLineConsole",
+  "tags": {
+    "language": "C#",
+    "type": "project"
+  }
+}

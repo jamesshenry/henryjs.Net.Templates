@@ -14,7 +14,8 @@ using static Nuke.Common.IO.PathConstruction;
 
 class Build : NukeBuild
 {
-    AbsolutePath Templates => RootDirectory / "templates/henry-js.Net.Templates.csproj";
+    AbsolutePath TemplateProject => RootDirectory / "templates/henry-js.Net.Templates.csproj";
+    AbsolutePath PackageDirectory => RootDirectory / "package";
     public static int Main() => Execute<Build>(x => x.Compile);
 
     [Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]
@@ -42,7 +43,8 @@ class Build : NukeBuild
         .Executes(() =>
         {
             DotNetTasks.DotNetPack(_ => _
-                .SetProject(Templates)
+                .SetProject(TemplateProject)
+                .SetOutputDirectory(PackageDirectory)
             );
             
         });
