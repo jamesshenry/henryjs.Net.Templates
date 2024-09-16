@@ -7,7 +7,6 @@
     "Console"
   ],
   "description": "System.CommandLine Command and Handler",
-  "groupIdentity": "henry-js.Net.Templates.Cli",
   "identity": "henry-js.Net.Templates.CliCommand",
   "name": "CliCommand",
   "defaultName": "CliCommand",

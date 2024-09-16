@@ -5,7 +5,6 @@
     "Common",
     "Console"
   ],
-  "groupIdentity": "henry-js.Net.Templates.Cli",
   "identity": "henry-js.Net.Templates.SystemCommandLineConsole",
   "name": "System.Commandline Console",
   "precedence": "1",
