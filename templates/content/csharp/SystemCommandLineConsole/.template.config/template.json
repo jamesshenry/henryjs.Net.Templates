@@ -9,7 +9,7 @@
   "name": "System.Commandline Console",
   "precedence": "1",
   "preferNameDirectory": true,
-  "shortName": "cmd-console",
+  "shortName": "cmdconsole",
   "sourceName": "SystemCommandLineConsole",
   "tags": {
     "language": "C#",
