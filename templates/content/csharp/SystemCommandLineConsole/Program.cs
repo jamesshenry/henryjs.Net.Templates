@@ -49,10 +49,4 @@ var cmdLine = new CommandLineBuilder(rootCommand)
 
 int result = await cmdLine.InvokeAsync(args);
 
-#if DEBUG
-AnsiConsole.WriteLine($"Program terminated with code {result}");
-AnsiConsole.WriteLine("Press any key to exit.");
-Console.ReadKey(intercept: true);
-#endif
-
 return result;

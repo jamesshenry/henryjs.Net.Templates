@@ -3,28 +3,25 @@ using Spectre.Console;
 using System.CommandLine;
 using System.CommandLine.Invocation;
 
-namespace MyProjectNamespace;
+namespace SystemCommandLineConsole.Cli;
 
 internal sealed class SampleCommand : Command
 {
-    public SampleCommand() : base("add", "Add a task to the list")
+    public SampleCommand() : base("sample", "A  sample command")
     {
         AddOptions(this);
     }
 
-    public static void AddOptions(Command command)
-    {
-    }
+    public static void AddOptions(Command command) { }
 
     new public class Handler(IAnsiConsole console, ILogger<SampleCommand> logger) : ICommandHandler
     {
-        public int Invoke(InvocationContext context)
-        {
-            return InvokeAsync(context).Result;
-        }
+        public int Invoke(InvocationContext context) => InvokeAsync(context).Result;
 
         public async Task<int> InvokeAsync(InvocationContext context)
         {
+            await Task.Delay(100);
+            console.WriteLine("Hello from sample command");
             return 0;
         }
     }
