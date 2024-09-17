@@ -3,7 +3,7 @@ using Spectre.Console;
 using System.CommandLine;
 using System.CommandLine.Invocation;
 
-namespace SystemCommandLineConsole.Cli;
+namespace SystemCommandLineConsole.Cli.Commands;
 
 internal sealed class SampleCommand : Command
 {
@@ -20,6 +20,7 @@ internal sealed class SampleCommand : Command
 
         public async Task<int> InvokeAsync(InvocationContext context)
         {
+            logger.LogInformation("Hello from SampleCommand logger!");
             await Task.Delay(100);
             console.WriteLine("Hello from sample command");
             return 0;

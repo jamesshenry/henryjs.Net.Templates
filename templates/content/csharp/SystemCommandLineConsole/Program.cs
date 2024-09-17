@@ -1,13 +1,13 @@
-﻿using System.CommandLine;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Serilog;
+using Spectre.Console;
+using System.CommandLine;
 using System.CommandLine.Builder;
 using System.CommandLine.Hosting;
 using System.CommandLine.Parsing;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using SystemCommandLineConsole;
-using Serilog;
-using Spectre.Console;
+using SystemCommandLineConsole.Cli.Extensions;
+using SystemCommandLineConsole.Cli.Commands;
 
 var loggerConfiguration = new LoggerConfiguration()
     .MinimumLevel.Debug()

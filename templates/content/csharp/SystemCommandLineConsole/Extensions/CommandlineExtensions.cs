@@ -3,7 +3,7 @@ using System.CommandLine.Invocation;
 using System.Reflection;
 using Microsoft.Extensions.Hosting;
 
-namespace SystemCommandLineConsole.Cli;
+namespace SystemCommandLineConsole.Cli.Extensions;
 
 public static class CommandLineExtensions
 {
