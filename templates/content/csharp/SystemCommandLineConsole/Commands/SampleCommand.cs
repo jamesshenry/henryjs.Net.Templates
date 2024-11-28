@@ -3,7 +3,7 @@ using Spectre.Console;
 using System.CommandLine;
 using System.CommandLine.Invocation;
 
-namespace SystemCommandLineConsole.Cli.Commands;
+namespace SystemCommandLineConsole.Commands;
 
 internal sealed class SampleCommand : Command
 {

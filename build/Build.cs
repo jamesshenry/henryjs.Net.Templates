@@ -26,8 +26,8 @@ class Build : NukeBuild
     [Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]
     readonly Configuration Configuration = IsLocalBuild ? Configuration.Debug : Configuration.Release;
 
-    bool IsMinVerPreRelease => MinVer.MinVerPreRelease is not null;
-    bool IsMinverRelease => MinVer.MinVerPreRelease is null;
+    bool IsMinverRelease => string.IsNullOrWhiteSpace(MinVer.MinVerPreRelease);
+    bool IsMinVerPreRelease => !IsMinverRelease;
     Target Clean => _ => _
         .Before(Restore)
         .Executes(() =>
@@ -80,6 +80,5 @@ class Build : NukeBuild
                 .CombineWith(packageFiles, (_, path) => _
                     .SetTargetPath(path))
                 );
-
         });
 }

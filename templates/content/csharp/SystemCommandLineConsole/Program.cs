@@ -6,8 +6,8 @@ using System.CommandLine;
 using System.CommandLine.Builder;
 using System.CommandLine.Hosting;
 using System.CommandLine.Parsing;
-using SystemCommandLineConsole.Cli.Extensions;
-using SystemCommandLineConsole.Cli.Commands;
+using SystemCommandLineConsole.Extensions;
+using SystemCommandLineConsole.Commands;
 
 var loggerConfiguration = new LoggerConfiguration()
     .MinimumLevel.Debug()
