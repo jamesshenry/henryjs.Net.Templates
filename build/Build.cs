@@ -17,7 +17,7 @@ using System.IO;
 
 class Build : NukeBuild
 {
-    [MinVer] readonly MinVer MinVer;
+    [MinVer] MinVer MinVer;
     AbsolutePath TemplateProject => RootDirectory / "templates/henry-js.Net.Templates.csproj";
     AbsolutePath PackageDirectory => RootDirectory / "package";
     public static int Main() => Execute<Build>(x => x.Compile);
@@ -49,6 +49,21 @@ class Build : NukeBuild
         .DependsOn(Restore)
         .Executes(() =>
         {
+            MinVer = MinVerTasks.MinVer(_ => _
+    .SetAutoIncrement(MinVerVersionPart.Minor)
+    .SetDefaultPreReleaseIdentifiers("preview.0")
+    .SetTagPrefix("v")
+).Result;
+            Log.Information("MinVer.Version = {Value}", MinVer.Version);
+            Log.Information("MinVer.FileVersion = {Value}", MinVer.FileVersion);
+            Log.Information("MinVer.MinVerVersion = {Value}", MinVer.MinVerVersion);
+            Log.Information("MinVer.PackageVersion = {Value}", MinVer.PackageVersion);
+            Log.Information("MinVer.AssemblyVersion = {Value}", MinVer.AssemblyVersion);
+            Log.Information("MinVer.MinVerBuildMetadata = {Value}", MinVer.MinVerBuildMetadata);
+            Log.Information("MinVer.MinVerMajor = {Value}", MinVer.MinVerMajor);
+            Log.Information("MinVer.MinVerMinor = {Value}", MinVer.MinVerMinor);
+            Log.Information("MinVer.MinVerPatch = {Value}", MinVer.MinVerPatch);
+            Log.Information("MinVer.MinVerPreRelease = {Value}", MinVer.MinVerPreRelease);
             PackageDirectory.CreateOrCleanDirectory();
             DotNetTasks.DotNetPack(_ => _
                 .SetProject(TemplateProject)
@@ -61,16 +76,7 @@ class Build : NukeBuild
         .DependsOn(Pack)
         .Executes(() =>
         {
-            Log.Information("MinVer.Version = {Value}", MinVer.Version);
-            Log.Information("MinVer.FileVersion = {Value}", MinVer.FileVersion);
-            Log.Information("MinVer.MinVerVersion = {Value}", MinVer.MinVerVersion);
-            Log.Information("MinVer.PackageVersion = {Value}", MinVer.PackageVersion);
-            Log.Information("MinVer.AssemblyVersion = {Value}", MinVer.AssemblyVersion);
-            Log.Information("MinVer.MinVerBuildMetadata = {Value}", MinVer.MinVerBuildMetadata);
-            Log.Information("MinVer.MinVerMajor = {Value}", MinVer.MinVerMajor);
-            Log.Information("MinVer.MinVerMinor = {Value}", MinVer.MinVerMinor);
-            Log.Information("MinVer.MinVerPatch = {Value}", MinVer.MinVerPatch);
-            Log.Information("MinVer.MinVerPreRelease = {Value}", MinVer.MinVerPreRelease);
+
             Assert.NotNullOrWhiteSpace(NugetApiKey);
             var packageFiles = PackageDirectory.GlobFiles("*.nupkg");
             Assert.Count(packageFiles, 1, "Only 1 .nupkg file should be produced");
