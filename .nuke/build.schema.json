@@ -26,9 +26,8 @@
       "enum": [
         "Clean",
         "Compile",
-        "NugetUpload",
         "Pack",
-        "Restore"
+        "Test"
       ]
     },
     "Verbosity": {
@@ -110,8 +109,26 @@
             "Release"
           ]
         },
-        "NugetApiKey": {
+        "Frameworks": {
+          "type": "array",
+          "description": "Target framework - Default is 'net9.0'",
+          "items": {
+            "type": "string"
+          }
+        },
+        "NupkgFolderName": {
           "type": "string"
+        },
+        "Runtimes": {
+          "type": "array",
+          "description": "Runtimes you want to compile & test against - Default is '<empty>'",
+          "items": {
+            "type": "string"
+          }
+        },
+        "Solution": {
+          "type": "string",
+          "description": "Path to a solution file that is automatically loaded"
         }
       }
     },

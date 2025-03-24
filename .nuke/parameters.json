@@ -1,5 +1,4 @@
 {
   "$schema": "build.schema.json",
-  "Solution": "henry-js.Net.Templates.sln",
-  "NugetApiKey": ""
+  "Solution": "henry-js.Net.Templates.sln"
 }

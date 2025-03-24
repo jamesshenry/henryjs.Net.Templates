@@ -5,7 +5,7 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "henry-js.Net.Templates", "templates\henry-js.Net.Templates.csproj", "{A808A7FA-7CA9-4943-81F2-F6F162C078FD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "_build", "build\_build.csproj", "{B73BA135-55D4-4B50-B56E-76CA0BF14B79}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "_build", ".nuke\_build.csproj", "{E6B25205-EBB6-42A8-A327-75AB49CC7341}"
 EndProject
 Global
 	GlobalSection(SolutionProperties) = preSolution
@@ -20,6 +20,8 @@ Global
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E6B25205-EBB6-42A8-A327-75AB49CC7341}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E6B25205-EBB6-42A8-A327-75AB49CC7341}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A808A7FA-7CA9-4943-81F2-F6F162C078FD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{A808A7FA-7CA9-4943-81F2-F6F162C078FD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A808A7FA-7CA9-4943-81F2-F6F162C078FD}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -32,17 +34,6 @@ Global
 		{A808A7FA-7CA9-4943-81F2-F6F162C078FD}.Release|x64.Build.0 = Release|Any CPU
 		{A808A7FA-7CA9-4943-81F2-F6F162C078FD}.Release|x86.ActiveCfg = Release|Any CPU
 		{A808A7FA-7CA9-4943-81F2-F6F162C078FD}.Release|x86.Build.0 = Release|Any CPU
-		{B73BA135-55D4-4B50-B56E-76CA0BF14B79}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B73BA135-55D4-4B50-B56E-76CA0BF14B79}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B73BA135-55D4-4B50-B56E-76CA0BF14B79}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{B73BA135-55D4-4B50-B56E-76CA0BF14B79}.Debug|x64.Build.0 = Debug|Any CPU
-		{B73BA135-55D4-4B50-B56E-76CA0BF14B79}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{B73BA135-55D4-4B50-B56E-76CA0BF14B79}.Debug|x86.Build.0 = Debug|Any CPU
-		{B73BA135-55D4-4B50-B56E-76CA0BF14B79}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B73BA135-55D4-4B50-B56E-76CA0BF14B79}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B73BA135-55D4-4B50-B56E-76CA0BF14B79}.Release|x64.ActiveCfg = Release|Any CPU
-		{B73BA135-55D4-4B50-B56E-76CA0BF14B79}.Release|x64.Build.0 = Release|Any CPU
-		{B73BA135-55D4-4B50-B56E-76CA0BF14B79}.Release|x86.ActiveCfg = Release|Any CPU
-		{B73BA135-55D4-4B50-B56E-76CA0BF14B79}.Release|x86.Build.0 = Release|Any CPU
+
 	EndGlobalSection
 EndGlobal
