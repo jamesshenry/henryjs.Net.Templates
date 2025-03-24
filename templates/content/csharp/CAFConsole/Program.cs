@@ -1,7 +1,6 @@
-﻿using CAFConsole;
-using CAFConsole.Commands;
+﻿using CAFConsole.Commands;
+using CAFConsole.Services;
 using ConsoleAppFramework;
-using Microsoft.Extensions.Configuration;
 using Velopack;
 
 VelopackApp.Build().Run();
