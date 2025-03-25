@@ -1,11 +1,17 @@
+using System.Text.Json;
 using CAFConsole.Services;
 using ConsoleAppFramework;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace CAFConsole.Commands;
 
-public class MyCommands([FromServices] ILogger<MyCommands> logger, IService service)
+public class MyCommands([FromServices] ILogger<MyCommands> logger, IService service, IOptions<AppConfig> options, IConfiguration configuration)
 {
+    private readonly AppConfig config = options.Value;
+    private readonly IConfiguration configuration = configuration;
+
     /// <summary>Root command test.</summary>
     /// <param name="msg">-m, Message to show.</param>
     [Command("")]
@@ -24,4 +30,15 @@ public class MyCommands([FromServices] ILogger<MyCommands> logger, IService serv
     /// <param name="x">left value.</param>
     /// <param name="y">right value.</param>
     public void Sum(int x, int y) => Console.WriteLine(x + y);
+
+    [Command("config")]
+    public void Config()
+    {
+        var opts = options;
+        logger.LogInformation("Displaying config");
+
+        var text = JsonSerializer.Serialize(config, typeof(AppConfig), ConfigContext.Default);
+
+        Console.WriteLine(text);
+    }
 }

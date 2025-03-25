@@ -33,4 +33,9 @@
     <PackageReference Include="Velopack" Version="0.0.1053" />
   </ItemGroup>
 
+<ItemGroup>
+<None Include="config.json">
+<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+</None>
+</ItemGroup>
 </Project>
