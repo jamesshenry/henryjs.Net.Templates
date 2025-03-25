@@ -2,6 +2,8 @@ using CAFConsole.Commands;
 using Jab;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Raiqub.JabModules.MicrosoftExtensionsOptions;
 
 namespace CAFConsole.Services;
 
@@ -9,6 +11,8 @@ namespace CAFConsole.Services;
 [Singleton<ILoggerFactory>(Instance = nameof(LoggerFactory))]
 [Singleton(typeof(ILogger<>), Factory = nameof(CreateLogger))]
 [Singleton(typeof(IService), typeof(ServiceImplementation))]
+[Import(typeof(IOptionsModule))]
+// [Transient<IConfigureOptions<Config>>(Factory = nameof(ConfigureMyConfig))]
 [Singleton<MyCommands>]
 [Singleton<IConfiguration>(Factory = nameof(CreateConfiguration))]
 internal partial class MyServiceProvider
@@ -28,4 +32,8 @@ internal partial class MyServiceProvider
         return LoggerFactory.CreateLogger<T>();
     }
 
+    // private static IConfigureOptions<Config> ConfigureMyConfig()
+    // {
+    //     return IOptionsModule.Configure<Config>()
+    // }
 }
