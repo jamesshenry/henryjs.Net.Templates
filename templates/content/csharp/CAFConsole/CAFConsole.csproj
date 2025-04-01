@@ -33,9 +33,24 @@
     <PackageReference Include="Velopack" Version="0.0.1053" />
   </ItemGroup>
 
-<ItemGroup>
-<None Include="config.json">
-<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-</None>
-</ItemGroup>
+  <ItemGroup>
+    <None Include="config.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="CAFConsole.Commands" />
+    <Using Include="CAFConsole.Configuration" />
+    <Using Include="CAFConsole.Services" />
+    <Using Include="ConsoleAppFramework" />
+    <Using Include="Jab" />
+    <Using Include="Raiqub.JabModules.MicrosoftExtensionsOptions" />
+    <Using Include="Microsoft.Extensions.Configuration" />
+    <Using Include="Microsoft.Extensions.Logging" />
+    <Using Include="Microsoft.Extensions.Logging.LoggerFactory" Alias="MSLogger" />
+    <Using Include="Microsoft.Extensions.Options" />
+    <Using Include="System.Text.Json" />
+    <Using Include="System.Text.Json.Serialization" />
+  </ItemGroup>
 </Project>
