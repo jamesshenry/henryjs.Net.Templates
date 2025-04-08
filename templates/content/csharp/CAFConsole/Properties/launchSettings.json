@@ -1,0 +1,9 @@
+{
+    "profiles": {
+        "CAFConsole": {
+            "commandName": "Project",
+            "commandLineArgs": "",
+            "workingDirectory": "..\\"
+        }
+    }
+}
