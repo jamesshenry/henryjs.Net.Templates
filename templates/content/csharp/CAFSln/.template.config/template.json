@@ -1,0 +1,19 @@
+{
+    "$schema": "http://json.schemastore.org/template",
+    "author": "henry-js",
+    "classifications": [
+        "Solution"
+    ],
+    "name": "ConsoleAppFramework Solution",
+    "description": "Standardized project structure for a CLI sln",
+    "identity": "henry-js.CAFConsole.Sln",
+    "shortName": "cafsln",
+    "tags": {
+        "language": "C#",
+        "type": "solution"
+    },
+    "guids": [
+        "3B60C150-CE85-471F-B67F-DA19D90B5AC7"
+    ],
+    "sourceName": "CAFConsole"
+}
