@@ -11,4 +11,8 @@
     <PackageReference Include="TUnit" Version="0.19.52" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\CAFConsole.Lib\CAFConsole.Lib.csproj" />
+  </ItemGroup>
+
 </Project>

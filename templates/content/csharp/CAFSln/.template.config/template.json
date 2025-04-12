@@ -6,14 +6,41 @@
     ],
     "name": "ConsoleAppFramework Solution",
     "description": "Standardized project structure for a CLI sln",
-    "identity": "henry-js.CAFConsole.Sln",
+    "identity": "henry-js.CAFConsole.Solution",
     "shortName": "cafsln",
     "tags": {
         "language": "C#",
         "type": "solution"
     },
     "guids": [
-        "3B60C150-CE85-471F-B67F-DA19D90B5AC7"
+        "A94D195E-48BF-48FF-93B2-D552C966323D",
+        "351F6972-61B5-4676-9E74-F376ACA883C8",
+        "8C43405D-427E-424E-A4F5-489D19EF1F7B"
     ],
-    "sourceName": "CAFConsole"
+    "sourceName": "CAFConsole",
+    "symbols": {
+        "IsSolution": {
+            "type": "computed",
+            "value": "true",
+            "datatype": "bool"
+        }
+    },
+    "sources": [
+        {
+            "modifiers": [
+                {
+                    "exclude": [
+                        "**/[Bb]in/**",
+                        "**/[Oo]bj/**",
+                        ".template.config/**/*",
+                        "**/*.filelist",
+                        "**/*.user",
+                        "**/*.lock.json",
+                        "**/.vs/**",
+                        "**/.artifacts/**"
+                    ]
+                }
+            ]
+        }
+    ]
 }

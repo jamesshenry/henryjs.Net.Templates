@@ -15,5 +15,12 @@
     "type": "project"
   },
   "sourceName": "CAFConsole",
-  "preferNameDirectory": true
+  "preferNameDirectory": true,
+  "symbols": {
+    "IsSolution": {
+      "type": "computed",
+      "value": "false",
+      "datatype": "bool"
+    }
+  }
 }
