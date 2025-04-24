@@ -1,3 +1,5 @@
+using Serilog.Templates;
+
 namespace CAFConsole.Services;
 
 [ServiceProvider]
@@ -16,15 +18,17 @@ internal partial class MyServiceProvider
             .AddJsonFile("./config.json", false)
             .Build();
 
-    private ILoggerFactory LoggerFactory
+    private static ILoggerFactory LoggerFactory
         => MSLogger.Create(builder => builder.AddSerilog(
             new LoggerConfiguration()
-                    .WriteTo.File(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs", "application.log"),
-                        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u}] {SourceContext}: {Message:lj}{NewLine}{Exception}",
-                        rollingInterval: RollingInterval.Day,
-                        shared: true)
+                    .WriteTo.File(
+                        formatter: new ExpressionTemplate(
+                            "[{@t:HH:mm:ss} {@l:u3}] {@m}\n{@x}"),
+                            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs", "app-.log"),
+                        shared: true,
+                        rollingInterval: RollingInterval.Day)
                     .Enrich.WithProperty("Application Name", "<APP NAME>")
-                    .WriteTo.Console(theme: AnsiConsoleTheme.Sixteen)
+                // .WriteTo.Console(theme: AnsiConsoleTheme.Sixteen)
                 .CreateLogger()));
 
     private ILogger<T> CreateLogger<T>()
