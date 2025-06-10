@@ -1,6 +1,13 @@
-﻿using Velopack;
+﻿using CAFConsole;
 
+using Velopack;
+
+#if DEBUG
+#else
 VelopackApp.Build().Run();
+SetupHelper.AddInstallDirToPath();
+SetupHelper.EnsureUserConfigExists();
+#endif
 
 MyServiceProvider sp = new();
 
