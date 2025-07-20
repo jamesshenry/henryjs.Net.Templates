@@ -1,8 +1,8 @@
 namespace CAFConsole.Commands;
 
-public class MyCommands([FromServices] ILogger<MyCommands> logger, IService service, IOptions<CliConfig> options)
+public class MyCommands([FromServices] ILogger<MyCommands> logger, IService service, IOptions<CAFConsoleSettings> options)
 {
-    private readonly CliConfig config = options.Value;
+    private readonly CAFConsoleSettings config = options.Value;
 
     /// <summary>Root command test.</summary>
     /// <param name="msg">-m, Message to show.</param>
@@ -29,7 +29,7 @@ public class MyCommands([FromServices] ILogger<MyCommands> logger, IService serv
         var opts = options;
         logger.LogInformation("Displaying IOptions wrapped config");
 
-        var text = JsonSerializer.Serialize(config, typeof(CliConfig), CliConfigContext.Default);
+        var text = JsonSerializer.Serialize(config, typeof(CAFConsoleSettings), CliConfigContext.Default);
 
         Console.WriteLine(text);
     }

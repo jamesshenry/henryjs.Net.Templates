@@ -6,7 +6,7 @@ namespace CAFConsole.Services;
 [Singleton<ILoggerFactory>(Instance = nameof(LoggerFactory))]
 [Singleton(typeof(ILogger<>), Factory = nameof(CreateLogger))]
 [Import(typeof(IOptionsModule))]
-[Transient<IConfigureOptions<CliConfig>>(Factory = nameof(BindCliConfig))]
+[Transient<IConfigureOptions<CAFConsoleSettings>>(Factory = nameof(BindCliConfig))]
 [Singleton(typeof(IService), typeof(ServiceImplementation))]
 [Singleton<MyCommands>]
 [Singleton<IConfiguration>(Factory = nameof(CreateConfiguration))]
@@ -34,7 +34,7 @@ internal partial class MyServiceProvider
     private ILogger<T> CreateLogger<T>()
         => LoggerFactory.CreateLogger<T>();
 
-    private static IConfigureOptions<CliConfig> BindCliConfig(IConfiguration configuration)
+    private static IConfigureOptions<CAFConsoleSettings> BindCliConfig(IConfiguration configuration)
         => IOptionsModule
-            .Configure<CliConfig>(config => configuration.Bind("Config", config));
+            .Configure<CAFConsoleSettings>(config => configuration.Bind("Config", config));
 }

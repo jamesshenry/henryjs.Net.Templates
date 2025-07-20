@@ -9,6 +9,7 @@ SetupHelper.AddInstallDirToPath();
 SetupHelper.EnsureUserConfigExists();
 #endif
 
+
 MyServiceProvider sp = new();
 
 ConsoleApp.ServiceProvider = sp;
