@@ -1,6 +1,6 @@
-﻿using CAFConsole.Lib.Tests.Data;
+﻿using CAFConsole.Tests.Data;
 
-namespace CAFConsole.Lib.Tests;
+namespace CAFConsole.Tests;
 
 public class Tests
 {

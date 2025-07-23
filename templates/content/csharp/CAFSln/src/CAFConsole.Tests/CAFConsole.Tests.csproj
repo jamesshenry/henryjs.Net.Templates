@@ -4,15 +4,11 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="TUnit" Version="0.25.21" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\CAFConsole.Lib\CAFConsole.Lib.csproj" />
+    <PackageReference Include="TUnit" Version="0.24.0" />
   </ItemGroup>
 
 </Project>

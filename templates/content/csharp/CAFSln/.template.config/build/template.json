@@ -1,0 +1,39 @@
+{
+    "$schema": "http://json.schemastore.org/template",
+    "author": "henry-js",
+    "classifications": [
+        "Build",
+        "CI/CD"
+    ],
+    "identity": "henry-js.CAF.Build",
+    "name": "ConsoleAppFramework Build System",
+    "shortName": "cafbuild",
+    "tags": {
+        "language": "C#",
+        "type": "item"
+    },
+    "sources": [
+        {
+            "source": "../",
+            "target": "./",
+            "include": [
+                ".build/**/*",
+                ".config/dotnet-tools.json",
+                ".github/**/*",
+                ".env.example",
+                "public.env",
+                "Taskfile.yml",
+                ".editorconfig"
+            ],
+            "exclude": [
+                "**/[Bb]in/**",
+                "**/[Oo]bj/**",
+                ".template.config/**/*",
+                "**/*.filelist",
+                "**/*.user",
+                "**/*.lock.json",
+                "[Ss]rc/**"
+            ]
+        }
+    ]
+}

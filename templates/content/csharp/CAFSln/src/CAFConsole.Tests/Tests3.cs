@@ -1,4 +1,4 @@
-﻿namespace CAFConsole.Lib.Tests;
+﻿namespace CAFConsole.Tests;
 
 [ClassDataSource<DataClass>]
 [ClassConstructor<DependencyInjectionClassConstructor>]

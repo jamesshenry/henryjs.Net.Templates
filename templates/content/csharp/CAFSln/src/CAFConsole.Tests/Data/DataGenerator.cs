@@ -1,4 +1,4 @@
-﻿namespace CAFConsole.Lib.Tests.Data;
+﻿namespace CAFConsole.Tests.Data;
 
 public class DataGenerator : DataSourceGeneratorAttribute<int, int, int>
 {

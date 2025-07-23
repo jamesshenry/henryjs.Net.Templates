@@ -1,5 +1,5 @@
 {
-  "$schema": "http://json.schemastore.org/template",
+  "$schema": "https://json.schemastore.org/template",
   "author": "henry-js",
   "classifications": [
     "Common",
@@ -8,14 +8,20 @@
   "name": "ConsoleAppFramework Console",
   "description": "TODO: fill the template description here.",
   "precedence": "0",
-  "identity": "henry-js.CAFConsole",
+  "identity": "henry-js.CAF.Console",
   "shortName": "cafc",
+  "sourceName": "CAFConsole",
   "tags": {
     "language": "C#",
     "type": "project"
   },
-  "sourceName": "CAFConsole",
   "preferNameDirectory": true,
+  "sources": [
+    {
+      "source": "../src/CAFConsole/",
+      "target": "./"
+    }
+  ],
   "symbols": {
     "IsSolution": {
       "type": "computed",

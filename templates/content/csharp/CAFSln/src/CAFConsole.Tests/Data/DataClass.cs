@@ -1,6 +1,6 @@
 ﻿using TUnit.Core.Interfaces;
 
-namespace CAFConsole.Lib.Tests;
+namespace CAFConsole.Tests;
 
 public class DataClass : IAsyncInitializer, IAsyncDisposable
 {
