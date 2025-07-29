@@ -40,9 +40,13 @@ public class Tests
     [ClassDataSource<DataClass>(Shared = SharedType.PerTestSession)]
     public void ClassDataSource(DataClass dataClass)
     {
-        Console.WriteLine("This test can accept a class, which can also be pre-initialised before being injected in");
+        Console.WriteLine(
+            "This test can accept a class, which can also be pre-initialised before being injected in"
+        );
 
-        Console.WriteLine("These can also be shared among other tests, or new'd up each time, by using the `Shared` property on the attribute");
+        Console.WriteLine(
+            "These can also be shared among other tests, or new'd up each time, by using the `Shared` property on the attribute"
+        );
     }
 
     [Test]

@@ -18,9 +18,7 @@ class Build : NukeBuild, INugetPush
     ///   - JetBrains Rider            https://nuke.build/rider
     ///   - Microsoft VisualStudio     https://nuke.build/visualstudio
     ///   - Microsoft VSCode           https://nuke.build/vscode
-
     public static int Main() => Execute<Build>(x => (x as ICompile).Compile);
 
     string IHasMainProject.ProjectName => "henry-js.Net.Templates";
-
 }

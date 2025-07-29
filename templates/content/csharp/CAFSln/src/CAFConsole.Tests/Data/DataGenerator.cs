@@ -2,7 +2,9 @@
 
 public class DataGenerator : DataSourceGeneratorAttribute<int, int, int>
 {
-    public override IEnumerable<Func<(int, int, int)>> GenerateDataSources(DataGeneratorMetadata dataGeneratorMetadata)
+    public override IEnumerable<Func<(int, int, int)>> GenerateDataSources(
+        DataGeneratorMetadata dataGeneratorMetadata
+    )
     {
         yield return () => (1, 1, 2);
         yield return () => (1, 2, 3);
