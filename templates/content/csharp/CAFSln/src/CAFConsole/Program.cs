@@ -8,12 +8,13 @@ using Velopack;
 
 #if DEBUG
 #else
-pathHelper.EnsureApplicationXdgConfigDirectoryIsInPath(appName: "CAFConsole");
 VelopackApp.Build().Run();
 #endif
 
 IEnvironmentService environmentService = new SystemEnvironmentService();
 var pathHelper = new PathEnvironmentHelper(environmentService);
+pathHelper.EnsureApplicationXdgConfigDirectoryIsInPath(appName: "CAFConsole");
+
 var services = new ServiceCollection();
 
 services.RegisterAppServices();
