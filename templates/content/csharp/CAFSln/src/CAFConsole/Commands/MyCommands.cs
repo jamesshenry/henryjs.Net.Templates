@@ -1,6 +1,17 @@
+using System.Text.Json;
+using CAFConsole.Configuration;
+using CAFConsole.Services;
+using ConsoleAppFramework;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+
 namespace CAFConsole.Commands;
 
-public class MyCommands([FromServices] ILogger<MyCommands> logger, IService service, IOptions<CAFConsoleSettings> options)
+public class MyCommands(
+    ILogger<MyCommands> logger,
+    IService service,
+    IOptions<CAFConsoleSettings> options
+)
 {
     private readonly CAFConsoleSettings config = options.Value;
 
@@ -29,7 +40,11 @@ public class MyCommands([FromServices] ILogger<MyCommands> logger, IService serv
         var opts = options;
         logger.LogInformation("Displaying IOptions wrapped config");
 
-        var text = JsonSerializer.Serialize(config, typeof(CAFConsoleSettings), CliConfigContext.Default);
+        var text = JsonSerializer.Serialize(
+            config,
+            typeof(CAFConsoleSettings),
+            CliConfigContext.Default
+        );
 
         Console.WriteLine(text);
     }

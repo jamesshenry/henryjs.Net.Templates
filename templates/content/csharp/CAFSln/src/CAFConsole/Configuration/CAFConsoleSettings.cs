@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace CAFConsole.Configuration;
 
 public class CAFConsoleSettings

@@ -1,5 +1,4 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <RootNamespace>CAFConsole</RootNamespace>
@@ -13,7 +12,6 @@
     <MinVerDefaultPreReleaseIdentifiers>preview.0</MinVerDefaultPreReleaseIdentifiers>
     <EnableConfigurationBindingGenerator>true</EnableConfigurationBindingGenerator>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="ConsoleAppFramework" Version="5.5.0">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -48,30 +46,11 @@
     </PackageReference>
     <PackageReference Include="Velopack" Version="0.0.1298" />
   </ItemGroup>
-
   <ItemGroup>
     <None Include="config.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-
-  <ItemGroup>
-    <Using Include="Serilog" />
-    <Using Include="Serilog.Sinks.File" />
-    <Using Include="Serilog.Sinks.SystemConsole.Themes" />
-    <Using Include="CAFConsole.Commands" />
-    <Using Include="CAFConsole.Configuration" />
-    <Using Include="CAFConsole.Filters" />
-    <Using Include="CAFConsole.Services" />
-    <Using Include="ConsoleAppFramework" />
-    <Using Include="Spectre.Console" />
-    <Using Include="Microsoft.Extensions.Configuration" />
-    <Using Include="Microsoft.Extensions.Logging" />
-    <Using Include="Microsoft.Extensions.Options" />
-    <Using Include="System.Text.Json" />
-    <Using Include="System.Text.Json.Serialization" />
-  </ItemGroup>
-
   <!--#if (IsSolution) -->
   <ItemGroup>
     <ProjectReference Include="..\CAFConsole.Lib\CAFConsole.Lib.csproj" />
