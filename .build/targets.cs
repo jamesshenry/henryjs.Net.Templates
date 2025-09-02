@@ -15,7 +15,7 @@ await ConsoleApp.RunAsync(
     async (
         string solution = "henryjs.Net.Templates.slnx",
         string publishProject = "",
-        string packProject = "",
+        string packProject = "templates/henry-js.Net.Templates.csproj",
         string os = "win",
         string arch = "x64",
         string configuration = "Release",
@@ -102,22 +102,6 @@ await ConsoleApp.RunAsync(
             () =>
             {
                 Console.WriteLine("Default target ran, which depends on 'build'.");
-            }
-        );
-
-        Target(
-            "publish",
-            dependsOn: ["build"],
-            () => // Publish depends on clean
-            {
-                ArgumentException.ThrowIfNullOrWhiteSpace(publishProject);
-
-                var publishDir = Path.Combine(root, "dist", "publish", rid); // Example output dir
-
-                return RunAsync(
-                    "dotnet",
-                    $"publish {publishProject} -c {configuration} -o {publishDir} --no-build"
-                );
             }
         );
 

@@ -1,6 +1,5 @@
 ﻿name: Build Pre-release
 
-# --- for testing ---
 on:
   push:
     branches:
@@ -10,20 +9,17 @@ on:
 jobs:
   build-library:
     name: Build NuGet Pre-release
-    # This job runs if the PROJECT_TO_PACK repository variable is defined.
     if: vars.PROJECT_TO_PACK != ''
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with: { fetch-depth: 0 } # Full history is required for MinVer
+        with: { fetch-depth: 0 }
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 10.0.100-preview.7.25380.108
-          dotnet-quality: preview
-      # minver-cli must be registered as a local tool in .config/dotnet-tools.json
+          global-json-file: global.json
       - name: Restore .NET tools
         run: dotnet tool restore
 
@@ -31,7 +27,7 @@ jobs:
         id: version
         run: |
           # Run the new dnx command and pipe to tail to get only the last line (the version).
-          VERSION=$(dnx minver-cli -y -p preview | tail -n 1)
+          VERSION=$(dnx minver-cli -y --defailt-pre-release-identifiers preview | tail -n 1)
           echo "Discovered version: $VERSION"
           echo "APP_VERSION=$VERSION" >> $GITHUB_ENV
 
@@ -39,7 +35,6 @@ jobs:
         run: dotnet run .build/targets.cs --target test
 
       - name: Pack NuGet Pre-release Package
-        # The version from the previous step is passed to your build script.
         run: dotnet run .build/targets.cs --target pack --packProject ${{ vars.PROJECT_TO_PACK }} --version ${{ env.APP_VERSION }}
 
       - name: Upload NuGet Artifact
@@ -51,7 +46,6 @@ jobs:
 
   build-application:
     name: Build App for ${{ matrix.os }}-${{ matrix.arch }}
-    # This job runs if the PROJECT_TO_PUBLISH repository variable is defined.
     if: vars.PROJECT_TO_PUBLISH != ''
     runs-on: ${{ matrix.runner_os }}
     strategy:
@@ -63,10 +57,12 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with: { fetch-depth: 0 } # Full history is required for MinVer
+        with: { fetch-depth: 0 } 
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
 
       - name: Restore .NET tools
         run: dotnet tool restore
@@ -82,12 +78,10 @@ jobs:
         run: dotnet run .build/targets.cs --target test
 
       - name: Build and Publish Pre-release for ${{ matrix.os }}-${{ matrix.arch }}
-        # The version is passed to the publish target in your build script.
         run: dotnet run .build/targets.cs --target publish --os ${{ matrix.os }} --arch ${{ matrix.arch }} --publishProject ${{ vars.PROJECT_TO_PUBLISH }} --version ${{ env.APP_VERSION }}
 
       - name: Upload Application Artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-artifact-${{ matrix.os }}-${{ matrix.arch }}-${{ env.APP_VERSION }}
-          # The path is updated to match the C# script's output directory.
           path: dist/publish/
