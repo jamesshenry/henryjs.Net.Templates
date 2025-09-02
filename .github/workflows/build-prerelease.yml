@@ -27,7 +27,7 @@ jobs:
         id: version
         run: |
           # Run the new dnx command and pipe to tail to get only the last line (the version).
-          VERSION=$(dnx minver-cli -y --defailt-pre-release-identifiers preview | tail -n 1)
+          VERSION=$(dnx minver-cli -y --default-pre-release-identifiers preview | tail -n 1)
           echo "Discovered version: $VERSION"
           echo "APP_VERSION=$VERSION" >> $GITHUB_ENV
 
