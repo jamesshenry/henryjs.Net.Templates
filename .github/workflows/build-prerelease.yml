@@ -20,7 +20,8 @@ jobs:
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
-
+        with:
+          global-json-file: global.json
       # minver-cli must be registered as a local tool in .config/dotnet-tools.json
       - name: Restore .NET tools
         run: dotnet tool restore
