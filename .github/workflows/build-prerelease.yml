@@ -35,7 +35,7 @@ jobs:
         run: dotnet run .build/targets.cs --target test
 
       - name: Pack NuGet Pre-release Package
-        run: dotnet run .build/targets.cs --target pack --packProject ${{ vars.PROJECT_TO_PACK }} --version ${{ env.APP_VERSION }}
+        run: dotnet run .build/targets.cs --target pack --version ${{ env.APP_VERSION }}
 
       - name: Upload NuGet Artifact
         uses: actions/upload-artifact@v4
