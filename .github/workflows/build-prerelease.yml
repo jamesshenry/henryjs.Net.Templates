@@ -22,6 +22,7 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.100-preview.7.25380.108
+          dotnet-quality: preview
       # minver-cli must be registered as a local tool in .config/dotnet-tools.json
       - name: Restore .NET tools
         run: dotnet tool restore
