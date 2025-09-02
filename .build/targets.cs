@@ -13,7 +13,7 @@ using static SimpleExec.Command;
 await ConsoleApp.RunAsync(
     args,
     async (
-        string solution = "CAFConsole.slnx",
+        string solution = "henryjs.Net.Templates.slnx",
         string publishProject = "",
         string packProject = "",
         string os = "win",
@@ -65,33 +65,34 @@ await ConsoleApp.RunAsync(
             ["build"],
             async () =>
             {
-                var coverageFileName = "coverage.xml";
-                var testResultFolder = "TestResults";
-                await RunAsync(
-                    "dotnet",
-                    $"test --solution {solution} --configuration {configuration} --no-build --coverage --coverage-output {coverageFileName} --coverage-output-format xml"
-                );
+                Console.WriteLine("No tests are configured yet.");
+                // var coverageFileName = "coverage.xml";
+                // await RunAsync(
+                //     "dotnet",
+                //     $"test --solution {solution} --configuration {configuration} --no-build --ignore-exit-code 8"
+                // );
 
-                string coveragePath = Path.Combine(
-                    root,
-                    "src",
-                    "CAFConsole.Tests",
-                    "bin",
-                    configuration,
-                    "net10.0",
-                    testResultFolder,
-                    coverageFileName
-                );
-                File.Move(
-                    coveragePath,
-                    Path.Combine(root, testResultFolder, coverageFileName),
-                    true
-                );
+                // var testResultFolder = "TestResults";
+                // string coveragePath = Path.Combine(
+                //     root,
+                //     "src",
+                //     "CAFConsole.Tests",
+                //     "bin",
+                //     configuration,
+                //     "net10.0",
+                //     testResultFolder,
+                //     coverageFileName
+                // );
+                // File.Move(
+                //     coveragePath,
+                //     Path.Combine(root, testResultFolder, coverageFileName),
+                //     true
+                // );
 
-                await RunAsync(
-                    "dotnet",
-                    $"reportgenerator -reports:{testResultFolder}/{coverageFileName} -targetdir:{testResultFolder}/coveragereport"
-                );
+                // await RunAsync(
+                //     "dotnet",
+                //     $"reportgenerator -reports:{testResultFolder}/{coverageFileName} -targetdir:{testResultFolder}/coveragereport"
+                // );
             }
         );
 

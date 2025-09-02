@@ -1,9 +1,10 @@
 ﻿name: Build Pre-release
 
+# --- for testing ---
 on:
   push:
     branches:
-      - main
+      - 'feature/update-ci-workflows'
   workflow_dispatch:
 
 jobs:
