@@ -16,14 +16,14 @@ var solutionOption = app.Option<string>(
     "-s|--solution <solution>",
     "The solution file to operate on.",
     CommandOptionType.SingleValue,
-    opts => opts.DefaultValue = "CAFConsole.slnx"
+    opts => opts.DefaultValue = "henryjs.Net.Templates.slnx"
 );
 
 var packProjectOption = app.Option<string>(
     "--packProject <project>",
     "The project file to pack into a NuGet package.",
     CommandOptionType.SingleValue,
-    opts => opts.DefaultValue = "src/CAFConsole.Lib/CAFConsole.Lib.csproj"
+    opts => opts.DefaultValue = "templates/henry-js.Net.Templates.csproj"
 );
 var configurationOption = app.Option<string>(
     "-c|--configuration <configuration>",
@@ -55,8 +55,6 @@ foreach (var (aliases, description) in Options.Definitions)
 {
     _ = app.Option(string.Join("|", aliases), description, CommandOptionType.NoValue);
 }
-
-var root = Directory.GetCurrentDirectory();
 
 app.OnExecuteAsync(async _ =>
 {
@@ -106,29 +104,34 @@ app.OnExecuteAsync(async _ =>
         ["build"],
         async () =>
         {
-            var coverageFileName = "coverage.xml";
-            await RunAsync(
-                "dotnet",
-                $"test --solution {solutionOption.Value()} --configuration {configurationOption.Value()} --no-build --ignore-exit-code 8"
-            );
+            Console.WriteLine("No tests are configured yet.");
+            // var coverageFileName = "coverage.xml";
+            // await RunAsync(
+            //     "dotnet",
+            //     $"test --solution {solution} --configuration {configuration} --no-build --ignore-exit-code 8"
+            // );
 
-            var testResultFolder = "TestResults";
-            string coveragePath = Path.Combine(
-                root,
-                "src",
-                "CAFConsole.Tests",
-                "bin",
-                configurationOption.Value(),
-                "net10.0",
-                testResultFolder,
-                coverageFileName
-            );
-            File.Move(coveragePath, Path.Combine(root, testResultFolder, coverageFileName), true);
+            // var testResultFolder = "TestResults";
+            // string coveragePath = Path.Combine(
+            //     root,
+            //     "src",
+            //     "CAFConsole.Tests",
+            //     "bin",
+            //     configuration,
+            //     "net10.0",
+            //     testResultFolder,
+            //     coverageFileName
+            // );
+            // File.Move(
+            //     coveragePath,
+            //     Path.Combine(root, testResultFolder, coverageFileName),
+            //     true
+            // );
 
-            await RunAsync(
-                "dotnet",
-                $"reportgenerator -reports:{testResultFolder}/{coverageFileName} -targetdir:{testResultFolder}/coveragereport"
-            );
+            // await RunAsync(
+            //     "dotnet",
+            //     $"reportgenerator -reports:{testResultFolder}/{coverageFileName} -targetdir:{testResultFolder}/coveragereport"
+            // );
         }
     );
 
@@ -147,6 +150,7 @@ app.OnExecuteAsync(async _ =>
         () =>
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(packProjectOption.Value());
+            var root = Directory.GetCurrentDirectory();
 
             var nugetOutputDir = Path.Combine(root, "dist", "nuget"); // Example output dir
 
