@@ -32,10 +32,10 @@ jobs:
           echo "APP_VERSION=$VERSION" >> $GITHUB_ENV
 
       - name: Run Tests
-        run: dotnet run .build/targets.cs --target test
+        run: dotnet run .build/targets.cs test
 
       - name: Pack NuGet Pre-release Package
-        run: dotnet run .build/targets.cs --target pack --version ${{ env.APP_VERSION }}
+        run: dotnet run .build/targets.cs pack --version ${{ env.APP_VERSION }}
 
       - name: Upload NuGet Artifact
         uses: actions/upload-artifact@v4
@@ -75,10 +75,10 @@ jobs:
           echo "APP_VERSION=$VERSION" >> $GITHUB_ENV
 
       - name: Run Tests
-        run: dotnet run .build/targets.cs --target test
+        run: dotnet run .build/targets.cs test
 
       - name: Build and Publish Pre-release for ${{ matrix.os }}-${{ matrix.arch }}
-        run: dotnet run .build/targets.cs --target publish --os ${{ matrix.os }} --arch ${{ matrix.arch }} --publishProject ${{ vars.PROJECT_TO_PUBLISH }} --version ${{ env.APP_VERSION }}
+        run: dotnet run .build/targets.cs publish --os ${{ matrix.os }} --arch ${{ matrix.arch }} --publishProject ${{ vars.PROJECT_TO_PUBLISH }} --version ${{ env.APP_VERSION }}
 
       - name: Upload Application Artifact
         uses: actions/upload-artifact@v4

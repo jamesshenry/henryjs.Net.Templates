@@ -34,4 +34,4 @@ jobs:
       - name: Run Tests
         # This single command will restore, build, and run tests, as defined
         # in your C# script's dependency chain (test -> build -> restore).
-        run: dotnet run .build/targets.cs --target test
+        run: dotnet run .build/targets.cs test
