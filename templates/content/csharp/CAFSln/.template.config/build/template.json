@@ -8,6 +8,8 @@
     "identity": "henry-js.CAF.Build",
     "name": "ConsoleAppFramework Build System",
     "shortName": "cafbuild",
+    "sourceName": "CAFConsole",
+    "description": "Scaffold a build system for common projects",
     "tags": {
         "language": "C#",
         "type": "item"

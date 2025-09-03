@@ -18,7 +18,12 @@ var solutionOption = app.Option<string>(
     CommandOptionType.SingleValue,
     opts => opts.DefaultValue = "CAFConsole.slnx"
 );
-
+var publishProjectOption = app.Option<string>(
+    "--packProject <project>",
+    "The project file to pack into a NuGet package.",
+    CommandOptionType.SingleValue,
+    opts => opts.DefaultValue = "src/CAFConsole/CAFConsole.csproj"
+);
 var packProjectOption = app.Option<string>(
     "--packProject <project>",
     "The project file to pack into a NuGet package.",
@@ -57,6 +62,7 @@ foreach (var (aliases, description) in Options.Definitions)
 }
 
 var root = Directory.GetCurrentDirectory();
+var rid = $"{osOption.Value()}-{archOption.Value()}";
 
 app.OnExecuteAsync(async _ =>
 {
@@ -135,25 +141,48 @@ app.OnExecuteAsync(async _ =>
     Target(
         "default",
         ["build"],
+        () => Console.WriteLine("Default target ran, which depends on 'build'.")
+    );
+
+    Target(
+        "publish",
+        dependsOn: ["build"],
         () =>
         {
-            Console.WriteLine("Default target ran, which depends on 'build'.");
+            ArgumentException.ThrowIfNullOrWhiteSpace(publishProjectOption.Value());
+
+            var publishDir = Path.Combine(root, "dist", "publish", rid);
+
+            return RunAsync(
+                "dotnet",
+                $"publish {publishProjectOption.Value()} -c {configurationOption.Value()} -o {publishDir} --no-build"
+            );
         }
     );
 
     Target(
         "pack",
         dependsOn: ["build"],
-        () =>
+        async () =>
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(packProjectOption.Value());
 
-            var nugetOutputDir = Path.Combine(root, "dist", "nuget"); // Example output dir
+            var nugetOutputDir = Path.Combine(root, "dist", "nuget");
 
-            return RunAsync(
+            await RunAsync(
                 "dotnet",
                 $"pack {packProjectOption.Value()} -c {configurationOption.Value()} -o {nugetOutputDir} --no-build"
             );
+
+            var files = Directory.GetFiles(nugetOutputDir, "*.nupkg");
+            if (files.Length == 0)
+            {
+                throw new InvalidOperationException("No NuGet package was created.");
+            }
+            foreach (var file in files)
+            {
+                Console.WriteLine($"NuGet package created: {file}");
+            }
         }
     );
 

@@ -147,17 +147,27 @@ app.OnExecuteAsync(async _ =>
     Target(
         "pack",
         dependsOn: ["build"],
-        () =>
+        async () =>
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(packProjectOption.Value());
             var root = Directory.GetCurrentDirectory();
 
             var nugetOutputDir = Path.Combine(root, "dist", "nuget"); // Example output dir
 
-            return RunAsync(
+            await RunAsync(
                 "dotnet",
                 $"pack {packProjectOption.Value()} -c {configurationOption.Value()} -o {nugetOutputDir} --no-build"
             );
+
+            var files = Directory.GetFiles(nugetOutputDir, "*.nupkg");
+            if (files.Length == 0)
+            {
+                throw new InvalidOperationException("No NuGet package was created.");
+            }
+            foreach (var file in files)
+            {
+                Console.WriteLine($"NuGet package created: {file}");
+            }
         }
     );
 

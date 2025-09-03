@@ -6,7 +6,7 @@
     "Console"
   ],
   "name": "ConsoleAppFramework Console",
-  "description": "TODO: fill the template description here.",
+  "description": "Scaffold a ConsoleAppFramework console application",
   "precedence": "0",
   "identity": "henry-js.CAF.Console",
   "shortName": "cafc",
