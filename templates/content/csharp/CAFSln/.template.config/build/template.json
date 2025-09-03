@@ -20,10 +20,8 @@
                 ".build/**/*",
                 ".config/dotnet-tools.json",
                 ".github/**/*",
-                ".env.example",
-                "public.env",
-                "Taskfile.yml",
-                ".editorconfig"
+                ".editorconfig",
+                "dotnet.config"
             ],
             "exclude": [
                 "**/[Bb]in/**",
