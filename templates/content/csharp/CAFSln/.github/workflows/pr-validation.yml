@@ -13,7 +13,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        # fetch-depth: 0 is important for tools that rely on git history
         with:
           fetch-depth: 0
 
@@ -22,16 +21,8 @@ jobs:
         with:
           global-json-file: global.json
 
-      # The 'dotnet tool restore' command will install local tools defined
-      # in the .config/dotnet-tools.json manifest file.
       - name: Restore .NET tools
         run: dotnet tool restore
 
-      # NOTE: The 'lint' step was removed as there is no corresponding target
-      # in your C# build script. You can add a 'lint' target to targets.cs
-      # to re-enable this functionality.
-
       - name: Run Tests
-        # This single command will restore, build, and run tests, as defined
-        # in your C# script's dependency chain (test -> build -> restore).
-        run: dotnet run .build/targets.cs --target test
+        run: dotnet run .build/targets.cs test

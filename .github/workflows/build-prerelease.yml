@@ -3,7 +3,7 @@
 on:
   push:
     branches:
-      - 'feature/update-ci-workflows'
+      - main
   workflow_dispatch:
 
 jobs:

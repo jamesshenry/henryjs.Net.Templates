@@ -1,7 +1,5 @@
 #!/usr/bin/dotnet run
 
-#:package ConsoleAppFramework@5.5.0
-#:package System.CommandLine@2.0.0-beta7.25380.108
 #:package McMaster.Extensions.CommandLineUtils@4.1.1
 #:package Bullseye@6.0.0
 #:package SimpleExec@12.0.0
