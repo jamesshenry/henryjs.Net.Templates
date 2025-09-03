@@ -1,6 +1,4 @@
-﻿using CAFConsole.Tests.Data;
-
-namespace CAFConsole.Tests;
+﻿namespace CAFConsole.Tests;
 
 public class Tests
 {
@@ -27,33 +25,6 @@ public class Tests
     public async Task MethodDataSource(int a, int b, int c)
     {
         Console.WriteLine("This one can accept arguments from a method");
-
-        var result = a + b;
-
-        await Assert.That(result).IsEqualTo(c);
-    }
-
-    [Test]
-    [ClassDataSource<DataClass>]
-    [ClassDataSource<DataClass>(Shared = SharedType.PerClass)]
-    [ClassDataSource<DataClass>(Shared = SharedType.PerAssembly)]
-    [ClassDataSource<DataClass>(Shared = SharedType.PerTestSession)]
-    public void ClassDataSource(DataClass dataClass)
-    {
-        Console.WriteLine(
-            "This test can accept a class, which can also be pre-initialised before being injected in"
-        );
-
-        Console.WriteLine(
-            "These can also be shared among other tests, or new'd up each time, by using the `Shared` property on the attribute"
-        );
-    }
-
-    [Test]
-    [DataGenerator]
-    public async Task CustomDataGenerator(int a, int b, int c)
-    {
-        Console.WriteLine("You can even define your own custom data generators");
 
         var result = a + b;
 

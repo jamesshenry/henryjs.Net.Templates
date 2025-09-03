@@ -23,7 +23,8 @@
                 ".config/dotnet-tools.json",
                 ".github/**/*",
                 ".editorconfig",
-                "dotnet.config"
+                "dotnet.config",
+                "build.*"
             ],
             "exclude": [
                 "**/[Bb]in/**",

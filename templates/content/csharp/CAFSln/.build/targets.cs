@@ -19,8 +19,8 @@ var solutionOption = app.Option<string>(
     opts => opts.DefaultValue = "CAFConsole.slnx"
 );
 var publishProjectOption = app.Option<string>(
-    "--packProject <project>",
-    "The project file to pack into a NuGet package.",
+    "--publishProject <project>",
+    "The project file to publish as an application.",
     CommandOptionType.SingleValue,
     opts => opts.DefaultValue = "src/CAFConsole/CAFConsole.csproj"
 );
@@ -39,12 +39,14 @@ var configurationOption = app.Option<string>(
 var osOption = app.Option<string>(
     "--os <os>",
     "The target operating system (e.g., win, linux, osx).",
-    CommandOptionType.SingleValue
+    CommandOptionType.SingleValue,
+    opts => opts.DefaultValue = "win"
 );
 var archOption = app.Option<string>(
     "--arch <arch>",
     "The target architecture (e.g., x64, x86, arm64).",
-    CommandOptionType.SingleValue
+    CommandOptionType.SingleValue,
+    opts => opts.DefaultValue = "x64"
 );
 var versionOption = app.Option<string>(
     "--version <version>",
@@ -61,11 +63,12 @@ foreach (var (aliases, description) in Options.Definitions)
     _ = app.Option(string.Join("|", aliases), description, CommandOptionType.NoValue);
 }
 
-var root = Directory.GetCurrentDirectory();
-var rid = $"{osOption.Value()}-{archOption.Value()}";
-
 app.OnExecuteAsync(async _ =>
 {
+    var root = Directory.GetCurrentDirectory();
+    var configuration = configurationOption.Value();
+    var solution = solutionOption.Value();
+
     var targets = app.Arguments[0].Values.OfType<string>();
     var options = new Options(
         Options.Definitions.Select(d =>
@@ -80,10 +83,9 @@ app.OnExecuteAsync(async _ =>
         "clean",
         () =>
         {
-            return RunAsync(
-                "dotnet",
-                $"clean {solutionOption.Value()} --configuration {configurationOption.Value()}"
-            );
+            ArgumentException.ThrowIfNullOrWhiteSpace(solution);
+            ArgumentException.ThrowIfNullOrWhiteSpace(configuration);
+            return RunAsync("dotnet", $"clean {solution} --configuration {configuration}");
         }
     );
 
@@ -91,7 +93,8 @@ app.OnExecuteAsync(async _ =>
         "restore",
         () =>
         {
-            return RunAsync("dotnet", $"restore {solutionOption.Value()}");
+            ArgumentException.ThrowIfNullOrWhiteSpace(solution);
+            return RunAsync("dotnet", $"restore {solution}");
         }
     );
 
@@ -100,9 +103,11 @@ app.OnExecuteAsync(async _ =>
         ["restore"],
         () =>
         {
+            ArgumentException.ThrowIfNullOrWhiteSpace(solution);
+            ArgumentException.ThrowIfNullOrWhiteSpace(configuration);
             return RunAsync(
                 "dotnet",
-                $"build {solutionOption.Value()} --configuration {configurationOption.Value()} --no-restore"
+                $"build {solution} --configuration {configuration} --no-restore"
             );
         }
     );
@@ -113,9 +118,12 @@ app.OnExecuteAsync(async _ =>
         async () =>
         {
             var coverageFileName = "coverage.xml";
+            ArgumentException.ThrowIfNullOrWhiteSpace(solution);
+            ArgumentException.ThrowIfNullOrWhiteSpace(configuration);
+
             await RunAsync(
                 "dotnet",
-                $"test --solution {solutionOption.Value()} --configuration {configurationOption.Value()} --no-build --ignore-exit-code 8"
+                $"test --solution {solution} --configuration {configuration} --no-build --ignore-exit-code 8"
             );
 
             var testResultFolder = "TestResults";
@@ -124,7 +132,7 @@ app.OnExecuteAsync(async _ =>
                 "src",
                 "CAFConsole.Tests",
                 "bin",
-                configurationOption.Value(),
+                configuration,
                 "net10.0",
                 testResultFolder,
                 coverageFileName
@@ -149,13 +157,18 @@ app.OnExecuteAsync(async _ =>
         dependsOn: ["build"],
         () =>
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(publishProjectOption.Value());
+            var publishProject = publishProjectOption.Value();
+            var os = osOption.Value();
+            var arch = archOption.Value();
+            ArgumentException.ThrowIfNullOrWhiteSpace(publishProject);
+
+            var rid = $"{os}-{arch}";
 
             var publishDir = Path.Combine(root, "dist", "publish", rid);
 
             return RunAsync(
                 "dotnet",
-                $"publish {publishProjectOption.Value()} -c {configurationOption.Value()} -o {publishDir} --no-build"
+                $"publish {publishProject} -c {configuration} -o {publishDir} --no-build"
             );
         }
     );
@@ -165,13 +178,15 @@ app.OnExecuteAsync(async _ =>
         dependsOn: ["build"],
         async () =>
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(packProjectOption.Value());
+            var packProject = packProjectOption.Value();
+
+            ArgumentException.ThrowIfNullOrWhiteSpace(packProject);
 
             var nugetOutputDir = Path.Combine(root, "dist", "nuget");
 
             await RunAsync(
                 "dotnet",
-                $"pack {packProjectOption.Value()} -c {configurationOption.Value()} -o {nugetOutputDir} --no-build"
+                $"pack {packProject} -c {configuration} -o {nugetOutputDir} --no-build"
             );
 
             var files = Directory.GetFiles(nugetOutputDir, "*.nupkg");

@@ -58,6 +58,10 @@ foreach (var (aliases, description) in Options.Definitions)
 
 app.OnExecuteAsync(async _ =>
 {
+    var root = Directory.GetCurrentDirectory();
+    var configuration = configurationOption.Value();
+    var solution = solutionOption.Value();
+
     var targets = app.Arguments[0].Values.OfType<string>();
     var options = new Options(
         Options.Definitions.Select(d =>
@@ -72,10 +76,9 @@ app.OnExecuteAsync(async _ =>
         "clean",
         () =>
         {
-            return RunAsync(
-                "dotnet",
-                $"clean {solutionOption.Value()} --configuration {configurationOption.Value()}"
-            );
+            ArgumentException.ThrowIfNullOrWhiteSpace(solution);
+            ArgumentException.ThrowIfNullOrWhiteSpace(configuration);
+            return RunAsync("dotnet", $"clean {solution} --configuration {configuration}");
         }
     );
 
@@ -83,7 +86,8 @@ app.OnExecuteAsync(async _ =>
         "restore",
         () =>
         {
-            return RunAsync("dotnet", $"restore {solutionOption.Value()}");
+            ArgumentException.ThrowIfNullOrWhiteSpace(solution);
+            return RunAsync("dotnet", $"restore {solution}");
         }
     );
 
@@ -92,9 +96,11 @@ app.OnExecuteAsync(async _ =>
         ["restore"],
         () =>
         {
+            ArgumentException.ThrowIfNullOrWhiteSpace(solution);
+            ArgumentException.ThrowIfNullOrWhiteSpace(configuration);
             return RunAsync(
                 "dotnet",
-                $"build {solutionOption.Value()} --configuration {configurationOption.Value()} --no-restore"
+                $"build {solution} --configuration {configuration} --no-restore"
             );
         }
     );
@@ -102,10 +108,13 @@ app.OnExecuteAsync(async _ =>
     Target(
         "test",
         ["build"],
-        async () =>
+        () =>
         {
-            Console.WriteLine("No tests are configured yet.");
+            Console.WriteLine("Test target is currently a placeholder and does not execute tests.");
             // var coverageFileName = "coverage.xml";
+            // ArgumentException.ThrowIfNullOrWhiteSpace(solution);
+            // ArgumentException.ThrowIfNullOrWhiteSpace(configuration);
+
             // await RunAsync(
             //     "dotnet",
             //     $"test --solution {solution} --configuration {configuration} --no-build --ignore-exit-code 8"
@@ -122,11 +131,7 @@ app.OnExecuteAsync(async _ =>
             //     testResultFolder,
             //     coverageFileName
             // );
-            // File.Move(
-            //     coveragePath,
-            //     Path.Combine(root, testResultFolder, coverageFileName),
-            //     true
-            // );
+            // File.Move(coveragePath, Path.Combine(root, testResultFolder, coverageFileName), true);
 
             // await RunAsync(
             //     "dotnet",
@@ -138,25 +143,44 @@ app.OnExecuteAsync(async _ =>
     Target(
         "default",
         ["build"],
-        () =>
-        {
-            Console.WriteLine("Default target ran, which depends on 'build'.");
-        }
+        () => Console.WriteLine("Default target ran, which depends on 'build'.")
     );
+
+    // Target(
+    //     "publish",
+    //     dependsOn: ["build"],
+    //     () =>
+    //     {
+    //         var publishProject = publishProjectOption.Value();
+    //         var os = osOption.Value();
+    //         var arch = archOption.Value();
+    //         ArgumentException.ThrowIfNullOrWhiteSpace(publishProject);
+
+    //         var rid = $"{os}-{arch}";
+
+    //         var publishDir = Path.Combine(root, "dist", "publish", rid);
+
+    //         return RunAsync(
+    //             "dotnet",
+    //             $"publish {publishProject} -c {configuration} -o {publishDir} --no-build"
+    //         );
+    //     }
+    // );
 
     Target(
         "pack",
         dependsOn: ["build"],
         async () =>
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(packProjectOption.Value());
-            var root = Directory.GetCurrentDirectory();
+            var packProject = packProjectOption.Value();
 
-            var nugetOutputDir = Path.Combine(root, "dist", "nuget"); // Example output dir
+            ArgumentException.ThrowIfNullOrWhiteSpace(packProject);
+
+            var nugetOutputDir = Path.Combine(root, "dist", "nuget");
 
             await RunAsync(
                 "dotnet",
-                $"pack {packProjectOption.Value()} -c {configurationOption.Value()} -o {nugetOutputDir} --no-build"
+                $"pack {packProject} -c {configuration} -o {nugetOutputDir} --no-build"
             );
 
             var files = Directory.GetFiles(nugetOutputDir, "*.nupkg");

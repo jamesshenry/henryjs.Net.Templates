@@ -4,6 +4,7 @@
   </Configurations>
   <Folder Name="/Solution Items/">
     <File Path=".editorconfig" />
+    <File Path="dotnet.config" />
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/CAFConsole.Lib/CAFConsole.Lib.csproj" />
