@@ -117,31 +117,17 @@ app.OnExecuteAsync(async _ =>
         ["build"],
         async () =>
         {
-            var coverageFileName = "coverage.xml";
             ArgumentException.ThrowIfNullOrWhiteSpace(solution);
             ArgumentException.ThrowIfNullOrWhiteSpace(configuration);
 
-            await RunAsync(
-                "dotnet",
-                $"test --solution {solution} --configuration {configuration} --no-build --ignore-exit-code 8"
-            );
-
+            // Note: Code coverage requires .NET 10 SDK or later, and
+            // the extension package Microsoft.Testing.Extensions.CodeCoverage
             var testResultFolder = "TestResults";
-            string coveragePath = Path.Combine(
-                root,
-                "src",
-                "CAFConsole.Tests",
-                "bin",
-                configuration,
-                "net10.0",
-                testResultFolder,
-                coverageFileName
-            );
-            File.Move(coveragePath, Path.Combine(root, testResultFolder, coverageFileName), true);
-
+            var coverageFileName = "coverage.xml";
+            var testResultPath = Directory.CreateDirectory(Path.Combine(root, testResultFolder));
             await RunAsync(
                 "dotnet",
-                $"reportgenerator -reports:{testResultFolder}/{coverageFileName} -targetdir:{testResultFolder}/coveragereport"
+                $"test --solution {solution} --configuration {configuration} --no-build --coverage --coverage-output {Path.Combine(testResultPath.FullName, coverageFileName)} --coverage-output-format xml --ignore-exit-code 8"
             );
         }
     );
