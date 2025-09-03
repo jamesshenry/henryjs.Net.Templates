@@ -1,18 +1,15 @@
 name: Publish Stable Release
 
-# --- for testing ---
 on:
   push:
     tags:
-      # Use a pattern that matches a temporary test tag
-      - 'v*-test'
+      - '[0-9]+.[0-9]+.[0-9]+-test'
 permissions:
   contents: write
 
 jobs:
   release-nuget:
     name: Publish NuGet Package
-    # This job will only run if the PROJECT_TO_PACK repository variable is set.
     if: vars.PROJECT_TO_PACK != ''
     runs-on: ubuntu-latest
     steps:
@@ -20,11 +17,11 @@ jobs:
         uses: actions/checkout@v4
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
       - name: Run Tests
-        # The script defaults will be used for solution path, etc.
         run: dotnet run .build/targets.cs test
       - name: Pack NuGet Package
-        # The packProject is now passed directly from the repository variable.
         run: dotnet run .build/targets.cs pack --packProject ${{ vars.PROJECT_TO_PACK }}
       - name: Push NuGet Package
         run: dotnet nuget push "dist/nuget/*.nupkg" --api-key ${{ secrets.NUGET_API_KEY }} --source "https://api.nuget.org/v3/index.json" --skip-duplicate
@@ -32,7 +29,6 @@ jobs:
 
   release-velopack:
     name: Prepare Velopack Release
-    # This job will only run if the PROJECT_TO_PUBLISH repository variable is set.
     if: vars.PROJECT_TO_PUBLISH != ''
     runs-on: ubuntu-latest
     outputs:
@@ -50,7 +46,6 @@ jobs:
   build-and-publish-velopack:
     name: Build & Publish for ${{ matrix.os }}-${{ matrix.arch }}
     needs: release-velopack # Depends on the release placeholder being created.
-    # The 'if' condition is inherited. This job will only run if release-velopack runs.
     runs-on: ${{ matrix.runner_os }}
     strategy:
       matrix:
@@ -62,10 +57,11 @@ jobs:
         uses: actions/checkout@v4
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
       - name: Run Tests
         run: dotnet run .build/targets.cs test
       - name: Build and Publish for ${{ matrix.os }}-${{ matrix.arch }}
-        # Arguments are passed directly to the build script.
         run: dotnet run .build/targets.cs publish --os ${{ matrix.os }} --arch ${{ matrix.arch }} --publishProject ${{ vars.PROJECT_TO_PUBLISH }}
       - name: Upload Artifacts
         env:

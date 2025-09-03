@@ -43,7 +43,6 @@ jobs:
           name: nuget-artifact-${{ env.APP_VERSION }}
           path: dist/nuget/
 
-
   build-application:
     name: Build App for ${{ matrix.os }}-${{ matrix.arch }}
     if: vars.PROJECT_TO_PUBLISH != ''
