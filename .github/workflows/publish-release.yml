@@ -63,7 +63,7 @@ jobs:
       - name: Run Tests
         run: dotnet run .build/targets.cs test
       - name: Build and Publish for ${{ matrix.os }}-${{ matrix.arch }}
-        run: dotnet run .build/targets.cs publish --os ${{ matrix.os }} --arch ${{ matrix.arch }} --publishProject ${{ vars.PROJECT_TO_PUBLISH }}
+        run: dotnet run .build/targets.cs publish --rid ${{ matrix.os }}-${{ matrix.arch }} --publishProject ${{ vars.PROJECT_TO_PUBLISH }}
       - name: Upload Artifacts
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

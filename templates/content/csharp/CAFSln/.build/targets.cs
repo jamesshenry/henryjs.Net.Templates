@@ -36,17 +36,10 @@ var configurationOption = app.Option<string>(
     CommandOptionType.SingleValue,
     opts => opts.DefaultValue = "Release"
 );
-var osOption = app.Option<string>(
-    "--os <os>",
-    "The target operating system (e.g., win, linux, osx).",
-    CommandOptionType.SingleValue,
-    opts => opts.DefaultValue = "win"
-);
-var archOption = app.Option<string>(
-    "--arch <arch>",
-    "The target architecture (e.g., x64, x86, arm64).",
-    CommandOptionType.SingleValue,
-    opts => opts.DefaultValue = "x64"
+var ridOption = app.Option<string>(
+    "--rid <rid>",
+    "The runtime identifier (RID) to use for publishing.",
+    CommandOptionType.SingleValue
 );
 var versionOption = app.Option<string>(
     "--version <version>",
@@ -94,7 +87,11 @@ app.OnExecuteAsync(async _ =>
         () =>
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(solution);
-            return RunAsync("dotnet", $"restore {solution}");
+
+            var rid = ridOption.Value();
+            var runtimeArg = string.IsNullOrEmpty(rid) ? $"--runtime {rid}" : string.Empty;
+            
+            return RunAsync("dotnet", $"restore {solution} {runtimeArg}");
         }
     );
 
@@ -144,17 +141,16 @@ app.OnExecuteAsync(async _ =>
         () =>
         {
             var publishProject = publishProjectOption.Value();
-            var os = osOption.Value();
-            var arch = archOption.Value();
             ArgumentException.ThrowIfNullOrWhiteSpace(publishProject);
 
-            var rid = $"{os}-{arch}";
+            var rid = ridOption.Value();
+            var runtimeArg = string.IsNullOrEmpty(rid) ? $"--runtime {rid}" : string.Empty;
 
-            var publishDir = Path.Combine(root, "dist", "publish", rid);
+            var publishDir = Path.Combine(root, "dist", "publish", rid!);
 
             return RunAsync(
                 "dotnet",
-                $"publish {publishProject} -c {configuration} -o {publishDir} --no-build"
+                $"publish {publishProject} -c {configuration} -o {publishDir} --no-build {runtimeArg}"
             );
         }
     );

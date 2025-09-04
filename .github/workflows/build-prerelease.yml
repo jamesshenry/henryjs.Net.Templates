@@ -77,7 +77,7 @@ jobs:
         run: dotnet run .build/targets.cs test
 
       - name: Build and Publish Pre-release for ${{ matrix.os }}-${{ matrix.arch }}
-        run: dotnet run .build/targets.cs publish --os ${{ matrix.os }} --arch ${{ matrix.arch }} --publishProject ${{ vars.PROJECT_TO_PUBLISH }} --version ${{ env.APP_VERSION }}
+        run: dotnet run .build/targets.cs publish --rid ${{ matrix.os }}-${{ matrix.arch }} --publishProject ${{ vars.PROJECT_TO_PUBLISH }} --version ${{ env.APP_VERSION }}
 
       - name: Upload Application Artifact
         uses: actions/upload-artifact@v4
