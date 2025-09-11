@@ -31,14 +31,9 @@ var configurationOption = app.Option<string>(
     CommandOptionType.SingleValue,
     opts => opts.DefaultValue = "Release"
 );
-var osOption = app.Option<string>(
-    "--os <os>",
-    "The target operating system (e.g., win, linux, osx).",
-    CommandOptionType.SingleValue
-);
-var archOption = app.Option<string>(
-    "--arch <arch>",
-    "The target architecture (e.g., x64, x86, arm64).",
+var ridOption = app.Option<string>(
+    "--rid <rid>",
+    "The runtime identifier (RID) to use for publishing.",
     CommandOptionType.SingleValue
 );
 var versionOption = app.Option<string>(
@@ -87,7 +82,11 @@ app.OnExecuteAsync(async _ =>
         () =>
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(solution);
-            return RunAsync("dotnet", $"restore {solution}");
+
+            var rid = ridOption.Value();
+            var runtimeArg = !string.IsNullOrEmpty(rid) ? $"--runtime {rid}" : string.Empty;
+
+            return RunAsync("dotnet", $"restore {solution} {runtimeArg}");
         }
     );
 
@@ -111,32 +110,6 @@ app.OnExecuteAsync(async _ =>
         () =>
         {
             Console.WriteLine("Test target is currently a placeholder and does not execute tests.");
-            // var coverageFileName = "coverage.xml";
-            // ArgumentException.ThrowIfNullOrWhiteSpace(solution);
-            // ArgumentException.ThrowIfNullOrWhiteSpace(configuration);
-
-            // await RunAsync(
-            //     "dotnet",
-            //     $"test --solution {solution} --configuration {configuration} --no-build --ignore-exit-code 8"
-            // );
-
-            // var testResultFolder = "TestResults";
-            // string coveragePath = Path.Combine(
-            //     root,
-            //     "src",
-            //     "CAFConsole.Tests",
-            //     "bin",
-            //     configuration,
-            //     "net10.0",
-            //     testResultFolder,
-            //     coverageFileName
-            // );
-            // File.Move(coveragePath, Path.Combine(root, testResultFolder, coverageFileName), true);
-
-            // await RunAsync(
-            //     "dotnet",
-            //     $"reportgenerator -reports:{testResultFolder}/{coverageFileName} -targetdir:{testResultFolder}/coveragereport"
-            // );
         }
     );
 
@@ -145,27 +118,6 @@ app.OnExecuteAsync(async _ =>
         ["build"],
         () => Console.WriteLine("Default target ran, which depends on 'build'.")
     );
-
-    // Target(
-    //     "publish",
-    //     dependsOn: ["build"],
-    //     () =>
-    //     {
-    //         var publishProject = publishProjectOption.Value();
-    //         var os = osOption.Value();
-    //         var arch = archOption.Value();
-    //         ArgumentException.ThrowIfNullOrWhiteSpace(publishProject);
-
-    //         var rid = $"{os}-{arch}";
-
-    //         var publishDir = Path.Combine(root, "dist", "publish", rid);
-
-    //         return RunAsync(
-    //             "dotnet",
-    //             $"publish {publishProject} -c {configuration} -o {publishDir} --no-build"
-    //         );
-    //     }
-    // );
 
     Target(
         "pack",
