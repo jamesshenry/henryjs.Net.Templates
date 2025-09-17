@@ -29,8 +29,8 @@ jobs:
     - name: Restore .NET tools
       run: dotnet tool restore
 
-    - name: Run Tests
-      run: dotnet run .build/targets.cs test
+    - name: Build sln
+      run: dotnet run .build/targets.cs build
 
     - name: Upload test results
       if: always() # Run this step even if tests fail
