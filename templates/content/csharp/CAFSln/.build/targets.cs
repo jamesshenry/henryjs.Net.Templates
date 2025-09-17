@@ -12,30 +12,6 @@ using static SimpleExec.Command;
 using var app = new CommandLineApplication { UsePagerForHelpText = false };
 app.HelpOption();
 
-var solutionOption = app.Option<string>(
-    "-s|--solution <solution>",
-    "The solution file to operate on.",
-    CommandOptionType.SingleValue,
-    opts => opts.DefaultValue = "CAFConsole.slnx"
-);
-var publishProjectOption = app.Option<string>(
-    "--publishProject <project>",
-    "The project file to publish as an application.",
-    CommandOptionType.SingleValue,
-    opts => opts.DefaultValue = "src/CAFConsole/CAFConsole.csproj"
-);
-var packProjectOption = app.Option<string>(
-    "--packProject <project>",
-    "The project file to pack into a NuGet package.",
-    CommandOptionType.SingleValue,
-    opts => opts.DefaultValue = "src/CAFConsole.Lib/CAFConsole.Lib.csproj"
-);
-var configurationOption = app.Option<string>(
-    "-c|--configuration <configuration>",
-    "The build configuration.",
-    CommandOptionType.SingleValue,
-    opts => opts.DefaultValue = "Release"
-);
 var ridOption = app.Option<string>(
     "--rid <rid>",
     "The runtime identifier (RID) to use for publishing.",
@@ -43,9 +19,10 @@ var ridOption = app.Option<string>(
 );
 var versionOption = app.Option<string>(
     "--version <version>",
-    "The version to use for packing.",
+    "The release version.",
     CommandOptionType.SingleValue
 );
+
 app.Argument(
     "targets",
     "A list of targets to run or list. If not specified, the \"default\" target will be run, or all targets will be listed.",
@@ -58,9 +35,12 @@ foreach (var (aliases, description) in Options.Definitions)
 
 app.OnExecuteAsync(async _ =>
 {
+    const string configuration = "Release";
+    const string solution = "CAFConsole.slnx";
+    const string publishProject = null!; // = "src/CAFConsole/CAFConsole.csproj";
+    const string packProject = null!; // = "src/CAFConsole.Lib/CAFConsole.Lib.csproj";
+
     var root = Directory.GetCurrentDirectory();
-    var configuration = configurationOption.Value();
-    var solution = solutionOption.Value();
 
     var targets = app.Arguments[0].Values.OfType<string>();
     var options = new Options(
@@ -72,25 +52,14 @@ app.OnExecuteAsync(async _ =>
         )
     );
 
-    Target(
-        "clean",
-        () =>
-        {
-            ArgumentException.ThrowIfNullOrWhiteSpace(solution);
-            ArgumentException.ThrowIfNullOrWhiteSpace(configuration);
-            return RunAsync("dotnet", $"clean {solution} --configuration {configuration}");
-        }
-    );
+    Target("clean", () => RunAsync("dotnet", $"clean {solution} --configuration {configuration}"));
 
     Target(
         "restore",
         () =>
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(solution);
-
             var rid = ridOption.Value();
             var runtimeArg = !string.IsNullOrEmpty(rid) ? $"--runtime {rid}" : string.Empty;
-
             return RunAsync("dotnet", $"restore {solution} {runtimeArg}");
         }
     );
@@ -98,15 +67,7 @@ app.OnExecuteAsync(async _ =>
     Target(
         "build",
         ["restore"],
-        () =>
-        {
-            ArgumentException.ThrowIfNullOrWhiteSpace(solution);
-            ArgumentException.ThrowIfNullOrWhiteSpace(configuration);
-            return RunAsync(
-                "dotnet",
-                $"build {solution} --configuration {configuration} --no-restore"
-            );
-        }
+        () => RunAsync("dotnet", $"build {solution} --configuration {configuration} --no-restore")
     );
 
     Target(
@@ -114,43 +75,33 @@ app.OnExecuteAsync(async _ =>
         ["build"],
         async () =>
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(solution);
-            ArgumentException.ThrowIfNullOrWhiteSpace(configuration);
-
-            // Note: Code coverage requires .NET 10 SDK or later, and
-            // the extension package Microsoft.Testing.Extensions.CodeCoverage
             var testResultFolder = "TestResults";
             var coverageFileName = "coverage.xml";
             var testResultPath = Directory.CreateDirectory(Path.Combine(root, testResultFolder));
             await RunAsync(
                 "dotnet",
-                $"test --solution {solution} --configuration {configuration} --no-build --coverage --coverage-output {Path.Combine(testResultPath.FullName, coverageFileName)} --coverage-output-format xml --ignore-exit-code 8"
+                $"test --solution {solution} --configuration {configuration} --coverage --coverage-output {Path.Combine(testResultPath.FullName, coverageFileName)} --coverage-output-format xml --ignore-exit-code 8"
             );
         }
     );
 
-    Target(
-        "default",
-        ["build"],
-        () => Console.WriteLine("Default target ran, which depends on 'build'.")
-    );
+    Target("default", ["build"], () => Console.WriteLine("Default target ran."));
 
     Target(
         "publish",
-        dependsOn: ["build"],
         () =>
         {
-            var publishProject = publishProjectOption.Value();
-            ArgumentException.ThrowIfNullOrWhiteSpace(publishProject);
-
             var rid = ridOption.Value();
-            var runtimeArg = !string.IsNullOrEmpty(rid) ? $"--runtime {rid}" : string.Empty;
+            ArgumentException.ThrowIfNullOrWhiteSpace(rid, nameof(rid));
+            var runtimeArg = $"--runtime {rid}";
 
-            var publishDir = Path.Combine(root, "dist", "publish", rid!);
+            var publishDir = Path.Combine(root, "dist", "publish", rid);
+            if (Directory.Exists(publishDir))
+                Directory.Delete(publishDir, true);
 
             return RunAsync(
                 "dotnet",
-                $"publish {publishProject} -c {configuration} -o {publishDir} --no-build {runtimeArg}"
+                $"publish {publishProject} -c {configuration} -o {publishDir} {runtimeArg}"
             );
         }
     );
@@ -160,8 +111,6 @@ app.OnExecuteAsync(async _ =>
         dependsOn: ["build"],
         async () =>
         {
-            var packProject = packProjectOption.Value();
-
             ArgumentException.ThrowIfNullOrWhiteSpace(packProject);
 
             var nugetOutputDir = Path.Combine(root, "dist", "nuget");
@@ -180,6 +129,32 @@ app.OnExecuteAsync(async _ =>
             {
                 Console.WriteLine($"NuGet package created: {file}");
             }
+        }
+    );
+
+    Target(
+        "release",
+        ["publish"],
+        () =>
+        {
+            const string velopackId = "typical";
+            var version = versionOption.Value();
+            ArgumentException.ThrowIfNullOrWhiteSpace(version, nameof(version));
+            var rid = ridOption.Value();
+            ArgumentException.ThrowIfNullOrWhiteSpace(rid, nameof(rid));
+
+            var publishDir = Path.Combine(root, "dist", "publish", rid);
+            var outputDir = Path.Combine(root, "dist", "release", rid);
+            if (Directory.Exists(outputDir))
+                Directory.Delete(outputDir, true);
+            string directive =
+                rid.StartsWith("linux", StringComparison.OrdinalIgnoreCase) ? "[linux]"
+                : rid.StartsWith("osx", StringComparison.OrdinalIgnoreCase) ? "[osx]"
+                : "[win]";
+            return RunAsync(
+                "dotnet",
+                $"vpk {directive} pack --packId {velopackId} --packVersion {version} --packDir \"{publishDir}\" --outputDir \"{outputDir}\" --yes"
+            );
         }
     );
 

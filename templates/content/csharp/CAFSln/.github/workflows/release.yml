@@ -9,89 +9,80 @@ permissions:
   contents: write
 
 jobs:
-  release-nuget:
-    name: Publish NuGet Package
-    if: vars.PROJECT_TO_PACK != ''
+  create-release:
+    name: Create or Find GitHub Release
     runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.get_or_create_release.outputs.upload_url }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          global-json-file: global.json
-      - name: Run Tests
-        run: dotnet run .build/targets.cs test
-      - name: Pack NuGet Package
-        run: dotnet run .build/targets.cs pack --packProject ${{ vars.PROJECT_TO_PACK }}
-      - name: Push NuGet Package
-        run: dotnet nuget push "dist/nuget/*.nupkg" --api-key ${{ secrets.NUGET_API_KEY }} --source "https://api.nuget.org/v3/index.json" --skip-duplicate
-
-
-  release-velopack:
-    name: Prepare Velopack Release
-    if: vars.PROJECT_TO_PUBLISH != ''
-    runs-on: ubuntu-latest
-    outputs:
-      upload_url: ${{ steps.create_release.outputs.upload_url }}
-    steps:
-      - name: Create GitHub Release
-        id: create_release
-        uses: actions/create-release@v1
+      - name: Get or Create Release
+        id: get_or_create_release
+        shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref_name }}
-          release_name: Release ${{ github.ref_name }}
-
-  build-and-publish-velopack:
-    name: Build & Publish for ${{ matrix.os }}-${{ matrix.arch }}
-    needs: release-velopack # Depends on the release placeholder being created.
+        run: |
+          if UPLOAD_URL=$(gh release view ${{ github.ref_name }} --json uploadUrl --jq .uploadUrl 2>/dev/null); then
+            echo "Release already exists. Using existing upload URL."
+          else
+            echo "Release does not exist. Creating a new one."
+            # Create the release and capture its upload_url from the output.
+            UPLOAD_URL=$(gh release create ${{ github.ref_name }} \
+                          --title "Release ${{ github.ref_name }}" \
+                          --notes "Automated release created by GitHub Actions." \
+                          --draft | grep -oP 'https://uploads.github.com/repos/.*/releases/.*/assets' )
+          fi
+          echo "Setting output: upload_url=$UPLOAD_URL"
+          echo "upload_url=$UPLOAD_URL" >> $GITHUB_OUTPUT
+  build-and-upload:
+    name: Build & Upload for ${{ matrix.rid }}
+    needs: create-release # Depends on the release placeholder being created.
     runs-on: ${{ matrix.runner_os }}
     strategy:
       matrix:
         include:
-          - { runner_os: windows-latest, os: win, arch: x64 }
-          - { runner_os: ubuntu-latest, os: linux, arch: x64 }
+          - { runner_os: ubuntu-latest, rid: linux-x64, os_name: linux }
+          - { runner_os: windows-latest, rid: win-x64, os_name: win }
+          - { runner_os: macos-latest, rid: osx-x64, os_name: osx }
+      fail-fast: false
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          global-json-file: global.json
-      - name: Run Tests
-        run: dotnet run .build/targets.cs test
-      - name: Build and Publish for ${{ matrix.os }}-${{ matrix.arch }}
-        run: dotnet run .build/targets.cs publish --os ${{ matrix.os }} --arch ${{ matrix.arch }} --publishProject ${{ vars.PROJECT_TO_PUBLISH }}
-      - name: Upload Artifacts
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        shell: bash
-        run: |
-          RID="${{ matrix.os }}-${{ matrix.arch }}"
-          SEARCH_PATH="./dist/publish/$RID"
-          echo "Searching for release asset in: $SEARCH_PATH"
-
-          # WARNING: Your build script runs a standard 'dotnet publish'. This upload step
-          # is looking for specific Velopack installers which are not created by default.
-          # This step will likely fail unless your .csproj is configured to produce
-          # these files (e.g., -Setup.exe, .AppImage) during the publish step.
-          if [[ "${{ matrix.os }}" == "win" ]]; then
-            FILES_TO_UPLOAD=$(find "$SEARCH_PATH" \( -name "*-Setup.exe" -o -name "*-Portable.zip" \))
-          elif [[ "${{ matrix.os }}" == "linux" ]]; then
-            FILES_TO_UPLOAD=$(find "$SEARCH_PATH" \( -name "*.AppImage" -o -name "*-Portable.zip" \))
-          elif [[ "${{ matrix.os }}" == "osx" ]]; then
-            FILES_TO_UPLOAD=$(find "$SEARCH_PATH" -name "*.zip")
-          fi
-
-          if [[ -z "$FILES_TO_UPLOAD" ]]; then
-            echo "::error::Could not find any release assets to upload in $SEARCH_PATH"
-            exit 1
-          fi
-
-          echo "--- Found assets to upload ---"
-          echo "$FILES_TO_UPLOAD"
-          echo "------------------------------"
-
-          echo "$FILES_TO_UPLOAD" | xargs gh release upload ${{ github.ref_name }} --clobber
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with: { fetch-depth: 0 }
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        global-json-file: global.json
+        dotnet-version: '9.0.x'
+    - name: Restore .NET tools
+      run: dotnet tool restore
+    - name: Get version
+      id: minver
+      shell: bash
+      run: |
+        VERSION_OUTPUT=$(dotnet minver --default-pre-release-identifiers preview --verbosity error)
+        echo "Discovered version: $VERSION_OUTPUT"
+        echo "package_version=$VERSION_OUTPUT" >> $GITHUB_OUTPUT
+      env:
+        DOTNET_NOLOGO: true
+    - name: Build Release for ${{ matrix.rid }}
+      run: dotnet run .build/targets.cs release --rid ${{ matrix.rid }} --version ${{ steps.minver.outputs.package_version }}
+    - name: Upload Release Assets
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        # Define the path to the release directory and the assets file
+        RELEASE_DIR="dist/release/${{ matrix.rid }}"
+        ASSETS_FILE="$RELEASE_DIR/assets.${{ matrix.os_name }}.json"
+        echo "Looking for assets file at: $ASSETS_FILE"
+        cd "$RELEASE_DIR"
+        ASSET_LIST=$(jq -r '.[] | select(.Type=="Installer" or .Type=="Portable") | .RelativeFileName' "assets.${{ matrix.os_name }}.json")
+        if [ -z "$ASSET_LIST" ]; then
+          echo "Warning: No Installer or Portable assets found in $ASSETS_FILE. Nothing to upload."
+        else
+          echo "Found assets to upload:"
+          echo "$ASSET_LIST"
+          echo "$ASSET_LIST" | tr -d '\r' | xargs gh release upload ${{ github.ref_name }} --clobber
+        fi

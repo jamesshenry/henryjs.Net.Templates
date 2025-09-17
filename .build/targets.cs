@@ -12,35 +12,6 @@ using static SimpleExec.Command;
 using var app = new CommandLineApplication { UsePagerForHelpText = false };
 app.HelpOption();
 
-var solutionOption = app.Option<string>(
-    "-s|--solution <solution>",
-    "The solution file to operate on.",
-    CommandOptionType.SingleValue,
-    opts => opts.DefaultValue = "henryjs.Net.Templates.slnx"
-);
-
-var packProjectOption = app.Option<string>(
-    "--packProject <project>",
-    "The project file to pack into a NuGet package.",
-    CommandOptionType.SingleValue,
-    opts => opts.DefaultValue = "templates/henry-js.Net.Templates.csproj"
-);
-var configurationOption = app.Option<string>(
-    "-c|--configuration <configuration>",
-    "The build configuration.",
-    CommandOptionType.SingleValue,
-    opts => opts.DefaultValue = "Release"
-);
-var ridOption = app.Option<string>(
-    "--rid <rid>",
-    "The runtime identifier (RID) to use for publishing.",
-    CommandOptionType.SingleValue
-);
-var versionOption = app.Option<string>(
-    "--version <version>",
-    "The version to use for packing.",
-    CommandOptionType.SingleValue
-);
 app.Argument(
     "targets",
     "A list of targets to run or list. If not specified, the \"default\" target will be run, or all targets will be listed.",
@@ -53,9 +24,11 @@ foreach (var (aliases, description) in Options.Definitions)
 
 app.OnExecuteAsync(async _ =>
 {
+    const string configuration = "Release";
+    const string solution = "henryjs.Net.Templates.slnx";
+    const string packProject = "templates/henry-js.Net.Templates.csproj";
+
     var root = Directory.GetCurrentDirectory();
-    var configuration = configurationOption.Value();
-    var solution = solutionOption.Value();
 
     var targets = app.Arguments[0].Values.OfType<string>();
     var options = new Options(
@@ -71,8 +44,6 @@ app.OnExecuteAsync(async _ =>
         "clean",
         () =>
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(solution);
-            ArgumentException.ThrowIfNullOrWhiteSpace(configuration);
             return RunAsync("dotnet", $"clean {solution} --configuration {configuration}");
         }
     );
@@ -81,9 +52,7 @@ app.OnExecuteAsync(async _ =>
         "restore",
         () =>
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(solution);
-
-            var rid = ridOption.Value();
+            string? rid = null;
             var runtimeArg = !string.IsNullOrEmpty(rid) ? $"--runtime {rid}" : string.Empty;
 
             return RunAsync("dotnet", $"restore {solution} {runtimeArg}");
@@ -95,8 +64,6 @@ app.OnExecuteAsync(async _ =>
         ["restore"],
         () =>
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(solution);
-            ArgumentException.ThrowIfNullOrWhiteSpace(configuration);
             return RunAsync(
                 "dotnet",
                 $"build {solution} --configuration {configuration} --no-restore"
@@ -106,7 +73,6 @@ app.OnExecuteAsync(async _ =>
 
     Target(
         "test",
-        ["build"],
         () =>
         {
             Console.WriteLine("Test target is currently a placeholder and does not execute tests.");
@@ -124,12 +90,12 @@ app.OnExecuteAsync(async _ =>
         dependsOn: ["build"],
         async () =>
         {
-            var packProject = packProjectOption.Value();
-
-            ArgumentException.ThrowIfNullOrWhiteSpace(packProject);
-
             var nugetOutputDir = Path.Combine(root, "dist", "nuget");
-
+            if (Directory.Exists(nugetOutputDir))
+            {
+                Directory.Delete(nugetOutputDir, true);
+                Directory.CreateDirectory(nugetOutputDir);
+            }
             await RunAsync(
                 "dotnet",
                 $"pack {packProject} -c {configuration} -o {nugetOutputDir} --no-build"
