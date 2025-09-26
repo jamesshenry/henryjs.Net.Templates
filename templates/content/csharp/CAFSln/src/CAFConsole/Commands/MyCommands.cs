@@ -1,7 +1,9 @@
 using System.Text.Json;
 using CAFConsole.Configuration;
+using CAFConsole.Data;
 using CAFConsole.Services;
 using ConsoleAppFramework;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -10,10 +12,11 @@ namespace CAFConsole.Commands;
 public class MyCommands(
     ILogger<MyCommands> logger,
     IService service,
-    IOptions<CAFConsoleSettings> options
+    IOptions<CliConfig> options,
+    AppDbContext dbContext
 )
 {
-    private readonly CAFConsoleSettings config = options.Value;
+    private readonly CliConfig config = options.Value;
 
     /// <summary>Root command test.</summary>
     /// <param name="msg">-m, Message to show.</param>
@@ -40,12 +43,28 @@ public class MyCommands(
         var opts = options;
         logger.LogInformation("Displaying IOptions wrapped config");
 
-        var text = JsonSerializer.Serialize(
-            config,
-            typeof(CAFConsoleSettings),
-            CliConfigContext.Default
-        );
+        var text = JsonSerializer.Serialize(config, typeof(CliConfig), CliConfigContext.Default);
 
         Console.WriteLine(text);
+    }
+
+    /// <summary>
+    /// Applies any pending Entity Framework migrations to the database.
+    /// </summary>
+    [Command("migrate-db")]
+    public async Task MigrateDatabase()
+    {
+        logger.LogInformation("Checking for and applying pending database migrations...");
+
+        var pendingMigrations = await dbContext.Database.GetPendingMigrationsAsync();
+        if (!pendingMigrations.Any())
+        {
+            logger.LogInformation("Database is already up to date. No migrations to apply.");
+            return;
+        }
+
+        await dbContext.Database.MigrateAsync();
+
+        logger.LogInformation("Successfully applied all pending migrations.");
     }
 }
