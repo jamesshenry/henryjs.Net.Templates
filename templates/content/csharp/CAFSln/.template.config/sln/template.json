@@ -23,6 +23,13 @@
             "type": "computed",
             "value": "true",
             "datatype": "bool"
+        },
+        "withDataAccess": {
+            "type": "parameter",
+            "datatype": "bool",
+            "displayName": "Include Data Access Layer",
+            "description": "If true, scaffolds a CAFConsole.Data project with Entity Framework Core and SQLite.",
+            "defaultValue": "false"
         }
     },
     "sources": [
@@ -36,9 +43,22 @@
                 "**/*.filelist",
                 "**/*.user",
                 "**/*.lock.json",
+                "**/*.dist",
                 "**/.vs/**",
-                "**/.artifacts/**"
+                "**/.artifacts/**",
+                "src/CAFConsole.Data/**",
+                "ef.rsp"
             ]
+        },
+        {
+            "source": "../src/CAFConsole.Data/",
+            "target": "./src/CAFConsole.Data/",
+            "condition": "(withDataAccess)"
+        },
+        {
+            "source": "../ef.rsp",
+            "target": "./ef.rsp",
+            "condition": "(withDataAccess)"
         }
     ]
 }

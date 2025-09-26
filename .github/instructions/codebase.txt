@@ -1,0 +1,1742 @@
+  - henry-js.Net.Templates.csproj
+        - .editorconfig
+        - build.ps1
+        - build.sh
+        - CAFConsole.slnx
+        - dotnet.config
+          - Directory.Build.props
+          - Directory.Build.targets
+          - targets.cs
+            - icon.ico
+            - icon.png
+            - ci.yml
+            - release-nuget.yml
+            - release.yml
+            - template.json
+            - template.json
+            - template.json
+          - Directory.Build.props
+            - CAFConsole.csproj
+            - config.json
+            - Constants.cs
+            - Program.cs
+            - sqlitedb.json
+              - MyCommands.cs
+              - CAFConsoleSettings.cs
+              - ExceptionFilter.cs
+              - SourceClassEnricher.cs
+              - launchSettings.json
+              - IService.cs
+              - ServiceExtensions.cs
+              - ServiceImplementation.cs
+            - AppDbContext.cs
+            - CAFConsole.Data.csproj
+            - DatabaseOptions.cs
+              - ServiceExtensions.cs
+            - CAFConsole.Lib.csproj
+            - Class1.cs
+            - CAFConsole.Tests.csproj
+            - Tests.cs
+      - .gitkeep
+
+# --- Start of Code Files ---
+
+
+// File: templates\content\csharp\CAFSln\.build\Directory.Build.props
+
+```text
+<?xml version="1.0" encoding="utf-8"?>
+<Project
+  ToolsVersion="4.0"
+  DefaultTargets="Build"
+  xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
+>
+  <!-- This file prevents unintended imports of unrelated MSBuild files -->
+  <!-- Uncomment to include parent Directory.Build.props file -->
+  <!--<Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />-->
+</Project>
+
+```
+// File: templates\content\csharp\CAFSln\.build\Directory.Build.targets
+
+```text
+<?xml version="1.0" encoding="utf-8"?>
+<Project
+  ToolsVersion="4.0"
+  DefaultTargets="Build"
+  xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
+>
+  <!-- This file prevents unintended imports of unrelated MSBuild files -->
+  <!-- Uncomment to include parent Directory.Build.targets file -->
+  <!--<Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.targets', '$(MSBuildThisFileDirectory)../'))" />-->
+</Project>
+
+```
+// File: templates\content\csharp\CAFSln\.build\targets.cs
+
+```csharp
+#!/usr/bin/dotnet run
+
+#:package McMaster.Extensions.CommandLineUtils@4.1.1
+#:package Bullseye@6.0.0
+#:package SimpleExec@12.0.0
+
+using Bullseye;
+using McMaster.Extensions.CommandLineUtils;
+using static Bullseye.Targets;
+using static SimpleExec.Command;
+
+using var app = new CommandLineApplication { UsePagerForHelpText = false };
+app.HelpOption();
+
+var ridOption = app.Option<string>(
+    "--rid <rid>",
+    "The runtime identifier (RID) to use for publishing.",
+    CommandOptionType.SingleValue
+);
+var versionOption = app.Option<string>(
+    "--version <version>",
+    "The release version.",
+    CommandOptionType.SingleValue
+);
+
+app.Argument(
+    "targets",
+    "A list of targets to run or list. If not specified, the \"default\" target will be run, or all targets will be listed.",
+    true
+);
+foreach (var (aliases, description) in Options.Definitions)
+{
+    _ = app.Option(string.Join("|", aliases), description, CommandOptionType.NoValue);
+}
+
+app.OnExecuteAsync(async _ =>
+{
+    const string configuration = "Release";
+    const string solution = "CAFConsole.slnx";
+    const string publishProject = null!; // = "src/CAFConsole/CAFConsole.csproj";
+    const string packProject = null!; // = "src/CAFConsole.Lib/CAFConsole.Lib.csproj";
+
+    var root = Directory.GetCurrentDirectory();
+
+    var targets = app.Arguments[0].Values.OfType<string>();
+    var options = new Options(
+        Options.Definitions.Select(d =>
+            (
+                d.Aliases[0],
+                app.Options.Single(o => d.Aliases.Contains($"--{o.LongName}")).HasValue()
+            )
+        )
+    );
+
+    Target("clean", () => RunAsync("dotnet", $"clean {solution} --configuration {configuration}"));
+
+    Target(
+        "restore",
+        () =>
+        {
+            var rid = ridOption.Value();
+            var runtimeArg = !string.IsNullOrEmpty(rid) ? $"--runtime {rid}" : string.Empty;
+            return RunAsync("dotnet", $"restore {solution} {runtimeArg}");
+        }
+    );
+
+    Target(
+        "build",
+        ["restore"],
+        () => RunAsync("dotnet", $"build {solution} --configuration {configuration} --no-restore")
+    );
+
+    Target(
+        "test",
+        ["build"],
+        async () =>
+        {
+            var testResultFolder = "TestResults";
+            var coverageFileName = "coverage.xml";
+            var testResultPath = Directory.CreateDirectory(Path.Combine(root, testResultFolder));
+            await RunAsync(
+                "dotnet",
+                $"test --solution {solution} --configuration {configuration} --coverage --coverage-output {Path.Combine(testResultPath.FullName, coverageFileName)} --coverage-output-format xml --ignore-exit-code 8"
+            );
+        }
+    );
+
+    Target("default", ["build"], () => Console.WriteLine("Default target ran."));
+
+    Target(
+        "publish",
+        () =>
+        {
+            var rid = ridOption.Value();
+            ArgumentException.ThrowIfNullOrWhiteSpace(rid, nameof(rid));
+            var runtimeArg = $"--runtime {rid}";
+
+            var publishDir = Path.Combine(root, "dist", "publish", rid);
+            if (Directory.Exists(publishDir))
+                Directory.Delete(publishDir, true);
+
+            return RunAsync(
+                "dotnet",
+                $"publish {publishProject} -c {configuration} -o {publishDir} {runtimeArg}"
+            );
+        }
+    );
+
+    Target(
+        "pack",
+        dependsOn: ["build"],
+        async () =>
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(packProject);
+
+            var nugetOutputDir = Path.Combine(root, "dist", "nuget");
+
+            await RunAsync(
+                "dotnet",
+                $"pack {packProject} -c {configuration} -o {nugetOutputDir} --no-build"
+            );
+
+            var files = Directory.GetFiles(nugetOutputDir, "*.nupkg");
+            if (files.Length == 0)
+            {
+                throw new InvalidOperationException("No NuGet package was created.");
+            }
+            foreach (var file in files)
+            {
+                Console.WriteLine($"NuGet package created: {file}");
+            }
+        }
+    );
+
+    Target(
+        "release",
+        ["publish"],
+        () =>
+        {
+            const string velopackId = "typical";
+            var version = versionOption.Value();
+            ArgumentException.ThrowIfNullOrWhiteSpace(version, nameof(version));
+            var rid = ridOption.Value();
+            ArgumentException.ThrowIfNullOrWhiteSpace(rid, nameof(rid));
+
+            var publishDir = Path.Combine(root, "dist", "publish", rid);
+            var outputDir = Path.Combine(root, "dist", "release", rid);
+            if (Directory.Exists(outputDir))
+                Directory.Delete(outputDir, true);
+            string directive =
+                rid.StartsWith("linux", StringComparison.OrdinalIgnoreCase) ? "[linux]"
+                : rid.StartsWith("osx", StringComparison.OrdinalIgnoreCase) ? "[osx]"
+                : "[win]";
+            return RunAsync(
+                "dotnet",
+                $"vpk {directive} pack --packId {velopackId} --packVersion {version} --packDir \"{publishDir}\" --outputDir \"{outputDir}\" --yes"
+            );
+        }
+    );
+
+    await RunTargetsAndExitAsync(targets, options);
+});
+
+return await app.ExecuteAsync(args);
+
+```
+// File: templates\content\csharp\CAFSln\.github\workflows\ci.yml
+
+```yaml
+# .github/workflows/ci.yml
+name: Continuous Integration
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    name: Test on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        global-json-file: global.json
+
+    - name: Restore .NET tools
+      run: dotnet tool restore
+
+    - name: Run Tests
+      run: dotnet run .build/targets.cs test
+
+    - name: Upload test results
+      if: always() # Run this step even if tests fail
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results-${{ matrix.os }}
+        path: TestResults/
+
+```
+// File: templates\content\csharp\CAFSln\.github\workflows\release-nuget.yml
+
+```yaml
+name: Publish Stable Nuget
+
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+
+permissions:
+  contents: write
+
+jobs:
+  release-nuget:
+    name: Publish NuGet Package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - name: Run Tests
+        run: dotnet run .build/targets.cs test
+      - name: Pack NuGet Package
+        run: dotnet run .build/targets.cs pack
+      # - name: Push NuGet Package
+      #   run: dotnet nuget push "dist/nuget/*.nupkg" --api-key ${{ secrets.NUGET_API_KEY }} --source "https://api.nuget.org/v3/index.json" --skip-duplicate
+
+```
+// File: templates\content\csharp\CAFSln\.github\workflows\release.yml
+
+```yaml
+name: Publish Stable Release
+
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+
+permissions:
+  contents: write
+
+jobs:
+  create-release:
+    name: Create or Find GitHub Release
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.get_or_create_release.outputs.upload_url }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Get or Create Release
+        id: get_or_create_release
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if UPLOAD_URL=$(gh release view ${{ github.ref_name }} --json uploadUrl --jq .uploadUrl 2>/dev/null); then
+            echo "Release already exists. Using existing upload URL."
+          else
+            echo "Release does not exist. Creating a new one."
+            # Create the release and capture its upload_url from the output.
+            UPLOAD_URL=$(gh release create ${{ github.ref_name }} \
+                          --title "Release ${{ github.ref_name }}" \
+                          --notes "Automated release created by GitHub Actions." \
+                          --draft | grep -oP 'https://uploads.github.com/repos/.*/releases/.*/assets' )
+          fi
+          echo "Setting output: upload_url=$UPLOAD_URL"
+          echo "upload_url=$UPLOAD_URL" >> $GITHUB_OUTPUT
+  build-and-upload:
+    name: Build & Upload for ${{ matrix.rid }}
+    needs: create-release # Depends on the release placeholder being created.
+    runs-on: ${{ matrix.runner_os }}
+    strategy:
+      matrix:
+        include:
+          - { runner_os: ubuntu-latest, rid: linux-x64, os_name: linux }
+          - { runner_os: windows-latest, rid: win-x64, os_name: win }
+          - { runner_os: macos-latest, rid: osx-x64, os_name: osx }
+      fail-fast: false
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with: { fetch-depth: 0 }
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        global-json-file: global.json
+        dotnet-version: '9.0.x'
+    - name: Restore .NET tools
+      run: dotnet tool restore
+    - name: Get version
+      id: minver
+      shell: bash
+      run: |
+        VERSION_OUTPUT=$(dotnet minver --default-pre-release-identifiers preview --verbosity error)
+        echo "Discovered version: $VERSION_OUTPUT"
+        echo "package_version=$VERSION_OUTPUT" >> $GITHUB_OUTPUT
+      env:
+        DOTNET_NOLOGO: true
+    - name: Build Release for ${{ matrix.rid }}
+      run: dotnet run .build/targets.cs release --rid ${{ matrix.rid }} --version ${{ steps.minver.outputs.package_version }}
+    - name: Upload Release Assets
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        # Define the path to the release directory and the assets file
+        RELEASE_DIR="dist/release/${{ matrix.rid }}"
+        ASSETS_FILE="$RELEASE_DIR/assets.${{ matrix.os_name }}.json"
+        echo "Looking for assets file at: $ASSETS_FILE"
+        cd "$RELEASE_DIR"
+        ASSET_LIST=$(jq -r '.[] | select(.Type=="Installer" or .Type=="Portable") | .RelativeFileName' "assets.${{ matrix.os_name }}.json")
+        if [ -z "$ASSET_LIST" ]; then
+          echo "Warning: No Installer or Portable assets found in $ASSETS_FILE. Nothing to upload."
+        else
+          echo "Found assets to upload:"
+          echo "$ASSET_LIST"
+          echo "$ASSET_LIST" | tr -d '\r' | xargs gh release upload ${{ github.ref_name }} --clobber
+        fi
+
+```
+// File: templates\content\csharp\CAFSln\.template.config\build\template.json
+
+```json
+{
+    "$schema": "http://json.schemastore.org/template",
+    "author": "henry-js",
+    "classifications": [
+        "Build",
+        "CI/CD"
+    ],
+    "identity": "henry-js.CAF.Build",
+    "name": "ConsoleAppFramework Build System",
+    "shortName": "cafbuild",
+    "sourceName": "CAFConsole",
+    "description": "Scaffold a build system for common projects",
+    "tags": {
+        "language": "C#",
+        "type": "item"
+    },
+    "sources": [
+        {
+            "source": "../",
+            "target": "./",
+            "include": [
+                ".build/**/*",
+                ".config/dotnet-tools.json",
+                ".github/**/*",
+                ".editorconfig",
+                "dotnet.config",
+                "build.*"
+            ],
+            "exclude": [
+                "**/[Bb]in/**",
+                "**/[Oo]bj/**",
+                ".template.config/**/*",
+                "**/*.filelist",
+                "**/*.user",
+                "**/*.lock.json",
+                "[Ss]rc/**"
+            ]
+        }
+    ]
+}
+
+```
+// File: templates\content\csharp\CAFSln\.template.config\console\template.json
+
+```json
+{
+  "$schema": "https://json.schemastore.org/template",
+  "author": "henry-js",
+  "classifications": [
+    "Common",
+    "Console"
+  ],
+  "name": "ConsoleAppFramework Console",
+  "description": "Scaffold a ConsoleAppFramework console application",
+  "precedence": "0",
+  "identity": "henry-js.CAF.Console",
+  "shortName": "cafc",
+  "sourceName": "CAFConsole",
+  "tags": {
+    "language": "C#",
+    "type": "project"
+  },
+  "preferNameDirectory": true,
+  "sources": [
+    {
+      "source": "../src/CAFConsole/",
+      "target": "./"
+    }
+  ],
+  "symbols": {
+    "IsSolution": {
+      "type": "computed",
+      "value": "false",
+      "datatype": "bool"
+    }
+  }
+}
+
+```
+// File: templates\content\csharp\CAFSln\.template.config\sln\template.json
+
+```json
+{
+    "$schema": "http://json.schemastore.org/template",
+    "author": "henry-js",
+    "classifications": [
+        "Solution"
+    ],
+    "name": "ConsoleAppFramework Solution",
+    "description": "Standardized project structure for a CLI sln",
+    "identity": "henry-js.CAF.Solution",
+    "shortName": "cafsln",
+    "tags": {
+        "language": "C#",
+        "type": "solution"
+    },
+    "guids": [
+        "A94D195E-48BF-48FF-93B2-D552C966323D",
+        "351F6972-61B5-4676-9E74-F376ACA883C8",
+        "8C43405D-427E-424E-A4F5-489D19EF1F7B"
+    ],
+    "sourceName": "CAFConsole",
+    "symbols": {
+        "IsSolution": {
+            "type": "computed",
+            "value": "true",
+            "datatype": "bool"
+        },
+        "withDataAccess": {
+            "type": "parameter",
+            "datatype": "bool",
+            "displayName": "Include Data Access Layer",
+            "description": "If true, scaffolds a CAFConsole.Data project with Entity Framework Core and SQLite.",
+            "defaultValue": "false"
+        }
+    },
+    "sources": [
+        {
+            "source": "../",
+            "target": "./",
+            "exclude": [
+                "**/[Bb]in/**",
+                "**/[Oo]bj/**",
+                ".template.config/**/*",
+                "**/*.filelist",
+                "**/*.user",
+                "**/*.lock.json",
+                "**/*.dist",
+                "**/.vs/**",
+                "**/.artifacts/**",
+                "src/CAFConsole.Data/**"
+            ]
+        },
+        {
+            "source": "../src/CAFConsole.Data/",
+            "target": "./src/CAFConsole.Data/",
+            "condition": "(withDataAccess)"
+        }
+    ]
+}
+
+```
+// File: templates\content\csharp\CAFSln\src\CAFConsole\Commands\MyCommands.cs
+
+```csharp
+using System.Text.Json;
+using CAFConsole.Configuration;
+using CAFConsole.Data;
+using CAFConsole.Services;
+using ConsoleAppFramework;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+
+namespace CAFConsole.Commands;
+
+public class MyCommands(
+    ILogger<MyCommands> logger,
+    IService service,
+    IOptions<CliConfig> options,
+    AppDbContext dbContext
+)
+{
+    private readonly CliConfig config = options.Value;
+
+    /// <summary>Root command test.</summary>
+    /// <param name="msg">-m, Message to show.</param>
+    [Command("")]
+    public void Root(string msg)
+    {
+        logger.LogInformation($"Hello from logger");
+        service.DoSomething();
+        Console.WriteLine(msg);
+    }
+
+    /// <summary>Display message.</summary>
+    /// <param name="msg">Message to show.</param>
+    public void Echo(string msg) => Console.WriteLine(msg);
+
+    /// <summary>Sum parameters.</summary>
+    /// <param name="x">left value.</param>
+    /// <param name="y">right value.</param>
+    public void Sum(int x, int y) => Console.WriteLine(x + y);
+
+    [Command("config")]
+    public void Config()
+    {
+        var opts = options;
+        logger.LogInformation("Displaying IOptions wrapped config");
+
+        var text = JsonSerializer.Serialize(config, typeof(CliConfig), CliConfigContext.Default);
+
+        Console.WriteLine(text);
+    }
+
+    /// <summary>
+    /// Applies any pending Entity Framework migrations to the database.
+    /// </summary>
+    [Command("migrate-db")]
+    public async Task MigrateDatabase()
+    {
+        logger.LogInformation("Checking for and applying pending database migrations...");
+
+        var pendingMigrations = await dbContext.Database.GetPendingMigrationsAsync();
+        if (!pendingMigrations.Any())
+        {
+            logger.LogInformation("Database is already up to date. No migrations to apply.");
+            return;
+        }
+
+        await dbContext.Database.MigrateAsync();
+
+        logger.LogInformation("Successfully applied all pending migrations.");
+    }
+}
+
+```
+// File: templates\content\csharp\CAFSln\src\CAFConsole\Configuration\CAFConsoleSettings.cs
+
+```csharp
+using System.Text.Json.Serialization;
+
+namespace CAFConsole.Configuration;
+
+public class CliConfig
+{
+    public int Port { get; set; }
+    public bool Enabled { get; set; }
+    public string? ApiUrl { get; set; }
+}
+
+[JsonSourceGenerationOptions(
+    WriteIndented = true,
+    AllowTrailingCommas = true,
+    UseStringEnumConverter = true,
+    PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
+    PropertyNameCaseInsensitive = true
+)]
+[JsonSerializable(typeof(CliConfig))]
+public partial class CliConfigContext : JsonSerializerContext;
+
+```
+// File: templates\content\csharp\CAFSln\src\CAFConsole\Filters\ExceptionFilter.cs
+
+```csharp
+using ConsoleAppFramework;
+using Microsoft.Extensions.Logging;
+using Spectre.Console;
+
+namespace CAFConsole.Filters;
+
+internal sealed class ExceptionFilter(ConsoleAppFilter next, ILoggerFactory factory)
+    : ConsoleAppFilter(next)
+{
+    public override async Task InvokeAsync(
+        ConsoleAppContext context,
+        CancellationToken cancellationToken
+    )
+    {
+        var logger = factory.CreateLogger("Program");
+
+        try
+        {
+            await Next.InvokeAsync(context, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLineInterpolated($"[red]{ex.Message}[/]");
+            logger.LogError(ex, "Program stopped");
+        }
+    }
+}
+
+```
+// File: templates\content\csharp\CAFSln\src\CAFConsole\Logging\SourceClassEnricher.cs
+
+```csharp
+using Serilog.Core;
+using Serilog.Events;
+
+namespace CAFConsole.Logging;
+
+public class SourceClassEnricher : ILogEventEnricher
+{
+    public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory)
+    {
+        if (
+            logEvent.Properties.TryGetValue("SourceContext", out var value)
+            && value is ScalarValue sv
+            && sv.Value is string fullName
+        )
+        {
+            var shortName = fullName.Split('.').Last();
+            var property = propertyFactory.CreateProperty("SourceClass", shortName);
+            logEvent.AddOrUpdateProperty(property);
+        }
+    }
+}
+
+```
+// File: templates\content\csharp\CAFSln\src\CAFConsole\Properties\launchSettings.json
+
+```json
+{
+    "profiles": {
+        "CAFConsole": {
+            "commandName": "Project",
+            "commandLineArgs": "",
+            "workingDirectory": "..\\"
+        }
+    }
+}
+
+```
+// File: templates\content\csharp\CAFSln\src\CAFConsole\Services\IService.cs
+
+```csharp
+namespace CAFConsole.Services;
+
+public interface IService
+{
+    void DoSomething();
+}
+
+```
+// File: templates\content\csharp\CAFSln\src\CAFConsole\Services\ServiceExtensions.cs
+
+```csharp
+using CAFConsole.Commands;
+using CAFConsole.Data;
+using CAFConsole.Data.Services;
+using CAFConsole.Logging;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Serilog;
+using Serilog.Events;
+using Serilog.Formatting.Display;
+using Serilog.Sinks.SystemConsole.Themes;
+
+namespace CAFConsole.Services;
+
+public static class ServiceExtensions
+{
+    public static IConfiguration CreateConfiguration()
+    {
+        var configBuilder = new ConfigurationBuilder().AddJsonFile(
+            "config.json",
+            optional: false,
+            reloadOnChange: true
+        );
+
+#if (withDataAccess)
+        configBuilder.AddJsonFile("sqlitedb.json", optional: false, reloadOnChange: true);
+#endif
+
+        return configBuilder.Build();
+    }
+
+    public static void ConfigureSerilog(this ILoggingBuilder builder)
+    {
+        const string outputTemplate =
+            "[{Timestamp:HH:mm:ss} {Level:u3}] ({SourceClass}) {Message:lj}{NewLine}{Exception}";
+        builder.AddSerilog(
+            new LoggerConfiguration()
+                .MinimumLevel.Debug()
+                .WriteTo.File(
+                    formatter: new MessageTemplateTextFormatter(outputTemplate),
+                    Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs", "app-.log"),
+                    restrictedToMinimumLevel: LogEventLevel.Debug,
+                    shared: true,
+                    rollingInterval: RollingInterval.Day
+                )
+                .Enrich.WithProperty("ApplicationName", "<APP NAME>")
+                .Enrich.With<SourceClassEnricher>()
+                .WriteTo.Console(
+                    outputTemplate: outputTemplate,
+                    theme: AnsiConsoleTheme.Sixteen,
+                    restrictedToMinimumLevel: LogEventLevel.Information
+                )
+                .CreateLogger()
+        );
+    }
+
+    public static IServiceCollection RegisterAppServices(this IServiceCollection services)
+    {
+        var configuration = CreateConfiguration();
+
+        services.AddLogging(ConfigureSerilog);
+        services.AddSingleton(configuration);
+        services.AddSingleton<IService, ServiceImplementation>();
+        services.AddSingleton<MyCommands>();
+
+#if (withDataAccess)
+        var databaseOptions = configuration
+            .GetSection(DatabaseOptions.SectionName)
+            .Get<DatabaseOptions>();
+
+        databaseOptions.FilePath = Path.Combine(
+            AppConstants.DataDirectory,
+            databaseOptions.FileName
+        );
+
+        services.AddSqliteDb(databaseOptions);
+#endif
+
+        return services;
+    }
+}
+
+```
+// File: templates\content\csharp\CAFSln\src\CAFConsole\Services\ServiceImplementation.cs
+
+```csharp
+using Microsoft.Extensions.Logging;
+
+namespace CAFConsole.Services;
+
+public class ServiceImplementation(ILogger<ServiceImplementation> logger) : IService
+{
+    public void DoSomething()
+    {
+        logger.LogCritical("I am doing something");
+    }
+}
+
+```
+// File: templates\content\csharp\CAFSln\src\CAFConsole\CAFConsole.csproj
+
+```xml
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>CAFConsole</RootNamespace>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <PublishAot>true</PublishAot>
+    <PublishSingleFile>true</PublishSingleFile>
+    <PublishSelfContained>true</PublishSelfContained>
+    <DebugType>embedded</DebugType>
+    <MinVerDefaultPreReleaseIdentifiers>preview.0</MinVerDefaultPreReleaseIdentifiers>
+    <EnableConfigurationBindingGenerator>true</EnableConfigurationBindingGenerator>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="ConsoleAppFramework" Version="5.6.1">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="DotNetPathUtils" Version="0.3.1" />
+    <!--#if (!IsSolution) -->
+    <PackageReference Include="Roslynator.Analyzers" Version="4.13.1">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Roslynator.CodeAnalysis.Analyzers" Version="4.13.1">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Roslynator.Formatting.Analyzers" Version="4.13.1">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <!--#endif -->
+    <PackageReference
+      Include="Microsoft.Extensions.DependencyInjection"
+      Version="10.0.0-rc.1.25451.107"
+    />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.0-rc.1.25451.107" />
+    <PackageReference Include="Serilog" Version="4.3.0" />
+    <PackageReference Include="Serilog.Extensions.Logging" Version="9.0.2" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+    <PackageReference Include="Spectre.Console" Version="0.51.1" />
+    <PackageReference Include="MinVer" Version="6.0.0">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Velopack" Version="0.0.1298" />
+    <PackageReference Include="Xdg.Directories" Version="0.1.2" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference
+      Include="Microsoft.EntityFrameworkCore.Design"
+      Version="10.0.0-rc.1.25451.107"
+    >
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="config.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="sqlitedb.json" Condition="$(withDataAccess)">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <!--#if (IsSolution) -->
+  <ItemGroup>
+    <ProjectReference Include="..\CAFConsole.Lib\CAFConsole.Lib.csproj" />
+    <!-- ADD CONDITION TO THIS PROJECT REFERENCE -->
+    <ProjectReference
+      Include="..\CAFConsole.Data\CAFConsole.Data.csproj"
+      Condition="$(withDataAccess)"
+    />
+  </ItemGroup>
+  <!--#endif -->
+</Project>
+
+```
+// File: templates\content\csharp\CAFSln\src\CAFConsole\config.json
+
+```json
+{
+    "CliConfig": {
+        "Port": "5001",
+        "Enabled": true,
+        "ApiUrl": "https://jsonplaceholder.typicode.com/"
+    }
+}
+
+```
+// File: templates\content\csharp\CAFSln\src\CAFConsole\Constants.cs
+
+```csharp
+namespace CAFConsole;
+
+public static class AppConstants
+{
+    public static string AppName => "CAFConsole";
+
+    // Centralize the logic for getting the data directory
+    public static string DataDirectory =>
+        Path.Combine(Xdg.Directories.BaseDirectory.DataHome, AppName.ToLower());
+
+    // Centralize the logic for the full database file path
+}
+
+public static class AppInitializer
+{
+    /// <summary>
+    /// Performs first-run and every-run initializations for the application.
+    /// This method is idempotent and safe to call on every application startup.
+    /// </summary>
+    public static void Initialize()
+    {
+        // 1. Ensure the application's data directory exists in the user's profile.
+        //    This is the most critical step.
+        if (!Directory.Exists(AppConstants.DataDirectory))
+        {
+            Directory.CreateDirectory(AppConstants.DataDirectory);
+        }
+
+        // 2. Handle any other necessary file creation.
+        //    For EF Core with SQLite, the database provider will create the .db file
+        //    automatically on first connection if it doesn't exist. Therefore,
+        //    you usually don't need to create the file itself, just the directory.
+
+        // Example: If you needed to create a default config file if one didn't exist:
+        // var userConfigPath = Path.Combine(AppConstants.DataDirectory, "user.json");
+        // if (!File.Exists(userConfigPath))
+        // {
+        //     File.WriteAllText(userConfigPath, "{}");
+        // }
+    }
+}
+
+```
+// File: templates\content\csharp\CAFSln\src\CAFConsole\Program.cs
+
+```csharp
+using CAFConsole;
+using CAFConsole.Commands;
+using CAFConsole.Filters;
+using CAFConsole.Services;
+using ConsoleAppFramework;
+using DotNetPathUtils;
+using Microsoft.Extensions.DependencyInjection;
+using Velopack;
+
+if (OperatingSystem.IsWindows())
+{
+    var appDirectory = Path.GetDirectoryName(AppContext.BaseDirectory)!;
+    var pathHelper = new PathEnvironmentHelper(new PathUtilsOptions() { PrefixWithPeriod = false });
+    VelopackApp
+        .Build()
+        .OnAfterInstallFastCallback(v => pathHelper.EnsureDirectoryIsInPath(appDirectory))
+        .OnBeforeUninstallFastCallback(v => pathHelper.RemoveDirectoryFromPath(appDirectory!))
+        .Run();
+}
+
+AppInitializer.Initialize();
+
+var services = new ServiceCollection();
+
+services.RegisterAppServices();
+ConsoleApp.ServiceProvider = services.BuildServiceProvider();
+
+var app = ConsoleApp.Create();
+
+app.Add<MyCommands>();
+
+app.UseFilter<ExceptionFilter>();
+
+await app.RunAsync(args);
+
+#if DEBUG
+Console.WriteLine("Press any key to exit...");
+Console.ReadKey();
+#endif
+
+```
+// File: templates\content\csharp\CAFSln\src\CAFConsole\sqlitedb.json
+
+```json
+{
+    "Database": {
+        "FileName": "app.db"
+    }
+}
+
+```
+// File: templates\content\csharp\CAFSln\src\CAFConsole.Data\Services\ServiceExtensions.cs
+
+```csharp
+using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace CAFConsole.Data.Services;
+
+public static class ServiceExtensions
+{
+    public static IServiceCollection AddSqliteDb(
+        this IServiceCollection services,
+        DatabaseOptions databaseOptions
+    )
+    {
+        if (databaseOptions is null || string.IsNullOrEmpty(databaseOptions.FilePath))
+        {
+            throw new InvalidOperationException(
+                $"The '{DatabaseOptions.SectionName}' configuration section is missing or the 'DbPath' is empty."
+            );
+        }
+
+        var finalConnectionString = new SqliteConnectionStringBuilder
+        {
+            DataSource = databaseOptions.FilePath,
+        }.ToString();
+
+        services.AddDbContext<AppDbContext>(options => options.UseSqlite(finalConnectionString));
+        return services;
+    }
+}
+
+```
+// File: templates\content\csharp\CAFSln\src\CAFConsole.Data\AppDbContext.cs
+
+```csharp
+using System.Reflection;
+using Microsoft.EntityFrameworkCore;
+
+namespace CAFConsole.Data;
+
+public class AppDbContext : DbContext
+{
+    public AppDbContext(DbContextOptions<AppDbContext> options)
+        : base(options) { }
+
+    // Add your DbSets here. For example:
+    // public DbSet<MyEntity> MyEntities { get; set; }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+        modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+    }
+}
+
+```
+// File: templates\content\csharp\CAFSln\src\CAFConsole.Data\CAFConsole.Data.csproj
+
+```xml
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference
+      Include="Microsoft.EntityFrameworkCore.Sqlite"
+      Version="10.0.0-rc.1.25451.107"
+    />
+    <PackageReference
+      Include="Microsoft.Extensions.DependencyInjection.Abstractions"
+      Version="10.0.0-rc.1.25451.107"
+    />
+  </ItemGroup>
+</Project>
+
+```
+// File: templates\content\csharp\CAFSln\src\CAFConsole.Data\DatabaseOptions.cs
+
+```csharp
+namespace CAFConsole.Data;
+
+public class DatabaseOptions
+{
+    /// <summary>
+    /// The configuration section name for these options.
+    /// </summary>
+    public const string SectionName = "Database";
+
+    /// <summary>
+    /// The name of the database file (e.g., "app.db").
+    /// </summary>
+    public string FileName { get; set; } = string.Empty;
+    public string FilePath { get; set; } = string.Empty;
+}
+
+```
+// File: templates\content\csharp\CAFSln\src\CAFConsole.Lib\CAFConsole.Lib.csproj
+
+```xml
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>CAFConsole.Lib</RootNamespace>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <MinVerDefaultPreReleaseIdentifiers>preview</MinVerDefaultPreReleaseIdentifiers>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="MinVer" Version="6.0.0">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+</Project>
+
+```
+// File: templates\content\csharp\CAFSln\src\CAFConsole.Lib\Class1.cs
+
+```csharp
+namespace CAFConsole.Lib;
+
+public class Class1 { }
+
+```
+// File: templates\content\csharp\CAFSln\src\CAFConsole.Tests\CAFConsole.Tests.csproj
+
+```xml
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" Version="17.14.2" />
+    <PackageReference Include="TUnit" Version="0.57.24" />
+  </ItemGroup>
+</Project>
+
+```
+// File: templates\content\csharp\CAFSln\src\CAFConsole.Tests\Tests.cs
+
+```csharp
+namespace CAFConsole.Tests;
+
+public class Tests
+{
+    [Test]
+    public void Basic()
+    {
+        Console.WriteLine("This is a basic test");
+    }
+
+    [Test]
+    [Arguments(1, 2, 3)]
+    [Arguments(2, 3, 5)]
+    public async Task DataDrivenArguments(int a, int b, int c)
+    {
+        Console.WriteLine("This one can accept arguments from an attribute");
+
+        var result = a + b;
+
+        await Assert.That(result).IsEqualTo(c);
+    }
+
+    [Test]
+    [MethodDataSource(nameof(DataSource))]
+    public async Task MethodDataSource(int a, int b, int c)
+    {
+        Console.WriteLine("This one can accept arguments from a method");
+
+        var result = a + b;
+
+        await Assert.That(result).IsEqualTo(c);
+    }
+
+    public static IEnumerable<(int a, int b, int c)> DataSource()
+    {
+        yield return (1, 1, 2);
+        yield return (2, 1, 3);
+        yield return (3, 1, 4);
+    }
+}
+
+```
+// File: templates\content\csharp\CAFSln\src\Directory.Build.props
+
+```text
+<Project>
+  <!-- See https://aka.ms/dotnet/msbuild/customize for more details on customizing your build -->
+  <PropertyGroup></PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Roslynator.Analyzers" Version="4.13.1">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Roslynator.CodeAnalysis.Analyzers" Version="4.13.1">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Roslynator.Formatting.Analyzers" Version="4.13.1">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+</Project>
+
+```
+// File: templates\content\csharp\CAFSln\.editorconfig
+
+```text
+root = true
+
+# All files
+[*]
+indent_style = space
+
+# Xml files
+[*.xml]
+indent_size = 2
+
+# C# files
+[*.cs]
+
+#### Core EditorConfig Options ####
+
+# Indentation and spacing
+indent_size = 4
+tab_width = 4
+
+# New line preferences
+insert_final_newline = false
+
+#### .NET Coding Conventions ####
+[*.{cs,vb}]
+
+# Organize usings
+dotnet_separate_import_directive_groups = true
+dotnet_sort_system_directives_first = true
+file_header_template = unset
+
+# this. and Me. preferences
+dotnet_style_qualification_for_event = false:silent
+dotnet_style_qualification_for_field = false:silent
+dotnet_style_qualification_for_method = false:silent
+dotnet_style_qualification_for_property = false:silent
+
+# Language keywords vs BCL types preferences
+dotnet_style_predefined_type_for_locals_parameters_members = true:silent
+dotnet_style_predefined_type_for_member_access = true:silent
+
+# Parentheses preferences
+dotnet_style_parentheses_in_arithmetic_binary_operators = always_for_clarity:silent
+dotnet_style_parentheses_in_other_binary_operators = always_for_clarity:silent
+dotnet_style_parentheses_in_other_operators = never_if_unnecessary:silent
+dotnet_style_parentheses_in_relational_binary_operators = always_for_clarity:silent
+
+# Modifier preferences
+dotnet_style_require_accessibility_modifiers = for_non_interface_members:silent
+
+# Expression-level preferences
+dotnet_style_coalesce_expression = true:suggestion
+dotnet_style_collection_initializer = true:suggestion
+dotnet_style_explicit_tuple_names = true:suggestion
+dotnet_style_namespace_match_folder = true:suggestion
+dotnet_style_null_propagation = true:suggestion
+dotnet_style_object_initializer = true:suggestion
+dotnet_style_operator_placement_when_wrapping = beginning_of_line
+dotnet_style_prefer_auto_properties = true:suggestion
+dotnet_style_prefer_collection_expression = when_types_loosely_match:suggestion
+dotnet_style_prefer_compound_assignment = true:suggestion
+dotnet_style_prefer_conditional_expression_over_assignment = true:suggestion
+dotnet_style_prefer_conditional_expression_over_return = true:suggestion
+dotnet_style_prefer_foreach_explicit_cast_in_source = when_strongly_typed:suggestion
+dotnet_style_prefer_inferred_anonymous_type_member_names = true:suggestion
+dotnet_style_prefer_inferred_tuple_names = true:suggestion
+dotnet_style_prefer_is_null_check_over_reference_equality_method = true:suggestion
+dotnet_style_prefer_simplified_boolean_expressions = true:suggestion
+dotnet_style_prefer_simplified_interpolation = true:suggestion
+
+# Field preferences
+dotnet_style_readonly_field = true:warning
+
+# Parameter preferences
+dotnet_code_quality_unused_parameters = all:suggestion
+
+# Suppression preferences
+dotnet_remove_unnecessary_suppression_exclusions = none
+
+#### C# Coding Conventions ####
+[*.cs]
+
+# var preferences
+csharp_style_var_elsewhere = false:silent
+csharp_style_var_for_built_in_types = false:silent
+csharp_style_var_when_type_is_apparent = false:silent
+
+# Expression-bodied members
+csharp_style_expression_bodied_accessors = true:silent
+csharp_style_expression_bodied_constructors = false:silent
+csharp_style_expression_bodied_indexers = true:silent
+csharp_style_expression_bodied_lambdas = true:suggestion
+csharp_style_expression_bodied_local_functions = false:silent
+csharp_style_expression_bodied_methods = false:silent
+csharp_style_expression_bodied_operators = false:silent
+csharp_style_expression_bodied_properties = true:silent
+
+# Pattern matching preferences
+csharp_style_pattern_matching_over_as_with_null_check = true:suggestion
+csharp_style_pattern_matching_over_is_with_cast_check = true:suggestion
+csharp_style_prefer_extended_property_pattern = true:suggestion
+csharp_style_prefer_not_pattern = true:suggestion
+csharp_style_prefer_pattern_matching = true:silent
+csharp_style_prefer_switch_expression = true:suggestion
+
+# Null-checking preferences
+csharp_style_conditional_delegate_call = true:suggestion
+
+# Modifier preferences
+csharp_prefer_static_anonymous_function = true:suggestion
+csharp_prefer_static_local_function = true:warning
+csharp_preferred_modifier_order = public,private,protected,internal,file,const,static,extern,new,virtual,abstract,sealed,override,readonly,unsafe,required,volatile,async:suggestion
+csharp_style_prefer_readonly_struct = true:suggestion
+csharp_style_prefer_readonly_struct_member = true:suggestion
+
+# Code-block preferences
+csharp_prefer_braces = true:silent
+csharp_prefer_simple_using_statement = true:suggestion
+csharp_style_namespace_declarations = file_scoped:suggestion
+csharp_style_prefer_method_group_conversion = true:silent
+csharp_style_prefer_primary_constructors = true:suggestion
+csharp_style_prefer_top_level_statements = true:silent
+
+# Expression-level preferences
+csharp_prefer_simple_default_expression = true:suggestion
+csharp_style_deconstructed_variable_declaration = true:suggestion
+csharp_style_implicit_object_creation_when_type_is_apparent = true:suggestion
+csharp_style_inlined_variable_declaration = true:suggestion
+csharp_style_prefer_index_operator = true:suggestion
+csharp_style_prefer_local_over_anonymous_function = true:suggestion
+csharp_style_prefer_null_check_over_type_check = true:suggestion
+csharp_style_prefer_range_operator = true:suggestion
+csharp_style_prefer_tuple_swap = true:suggestion
+csharp_style_prefer_utf8_string_literals = true:suggestion
+csharp_style_throw_expression = true:suggestion
+csharp_style_unused_value_assignment_preference = discard_variable:suggestion
+csharp_style_unused_value_expression_statement_preference = discard_variable:silent
+
+# 'using' directive preferences
+csharp_using_directive_placement = outside_namespace:silent
+
+#### C# Formatting Rules ####
+
+# New line preferences
+csharp_new_line_before_catch = true
+csharp_new_line_before_else = true
+csharp_new_line_before_finally = true
+csharp_new_line_before_members_in_anonymous_types = true
+csharp_new_line_before_members_in_object_initializers = true
+csharp_new_line_before_open_brace = all
+csharp_new_line_between_query_expression_clauses = true
+
+# Indentation preferences
+csharp_indent_block_contents = true
+csharp_indent_braces = false
+csharp_indent_case_contents = true
+csharp_indent_case_contents_when_block = true
+csharp_indent_labels = one_less_than_current
+csharp_indent_switch_labels = true
+
+# Space preferences
+csharp_space_after_cast = false
+csharp_space_after_colon_in_inheritance_clause = true
+csharp_space_after_comma = true
+csharp_space_after_dot = false
+csharp_space_after_keywords_in_control_flow_statements = true
+csharp_space_after_semicolon_in_for_statement = true
+csharp_space_around_binary_operators = before_and_after
+csharp_space_around_declaration_statements = false
+csharp_space_before_colon_in_inheritance_clause = true
+csharp_space_before_comma = false
+csharp_space_before_dot = false
+csharp_space_before_open_square_brackets = false
+csharp_space_before_semicolon_in_for_statement = false
+csharp_space_between_empty_square_brackets = false
+csharp_space_between_method_call_empty_parameter_list_parentheses = false
+csharp_space_between_method_call_name_and_opening_parenthesis = false
+csharp_space_between_method_call_parameter_list_parentheses = false
+csharp_space_between_method_declaration_empty_parameter_list_parentheses = false
+csharp_space_between_method_declaration_name_and_open_parenthesis = false
+csharp_space_between_method_declaration_parameter_list_parentheses = false
+csharp_space_between_parentheses = false
+csharp_space_between_square_brackets = false
+
+# Wrapping preferences
+csharp_preserve_single_line_blocks = true
+csharp_preserve_single_line_statements = true
+csharp_prefer_system_threading_lock = true:suggestion
+csharp_style_prefer_implicitly_typed_lambda_expression = true:suggestion
+
+#### Naming styles ####
+[*.{cs,vb}]
+
+# Naming rules
+
+dotnet_naming_rule.types_and_namespaces_should_be_pascalcase.severity = suggestion
+dotnet_naming_rule.types_and_namespaces_should_be_pascalcase.symbols = types_and_namespaces
+dotnet_naming_rule.types_and_namespaces_should_be_pascalcase.style = pascalcase
+
+dotnet_naming_rule.interfaces_should_be_ipascalcase.severity = suggestion
+dotnet_naming_rule.interfaces_should_be_ipascalcase.symbols = interfaces
+dotnet_naming_rule.interfaces_should_be_ipascalcase.style = ipascalcase
+
+dotnet_naming_rule.type_parameters_should_be_tpascalcase.severity = suggestion
+dotnet_naming_rule.type_parameters_should_be_tpascalcase.symbols = type_parameters
+dotnet_naming_rule.type_parameters_should_be_tpascalcase.style = tpascalcase
+
+dotnet_naming_rule.methods_should_be_pascalcase.severity = suggestion
+dotnet_naming_rule.methods_should_be_pascalcase.symbols = methods
+dotnet_naming_rule.methods_should_be_pascalcase.style = pascalcase
+
+dotnet_naming_rule.properties_should_be_pascalcase.severity = suggestion
+dotnet_naming_rule.properties_should_be_pascalcase.symbols = properties
+dotnet_naming_rule.properties_should_be_pascalcase.style = pascalcase
+
+dotnet_naming_rule.events_should_be_pascalcase.severity = suggestion
+dotnet_naming_rule.events_should_be_pascalcase.symbols = events
+dotnet_naming_rule.events_should_be_pascalcase.style = pascalcase
+
+dotnet_naming_rule.local_variables_should_be_camelcase.severity = suggestion
+dotnet_naming_rule.local_variables_should_be_camelcase.symbols = local_variables
+dotnet_naming_rule.local_variables_should_be_camelcase.style = camelcase
+
+dotnet_naming_rule.local_constants_should_be_camelcase.severity = suggestion
+dotnet_naming_rule.local_constants_should_be_camelcase.symbols = local_constants
+dotnet_naming_rule.local_constants_should_be_camelcase.style = camelcase
+
+dotnet_naming_rule.parameters_should_be_camelcase.severity = suggestion
+dotnet_naming_rule.parameters_should_be_camelcase.symbols = parameters
+dotnet_naming_rule.parameters_should_be_camelcase.style = camelcase
+
+dotnet_naming_rule.public_fields_should_be_pascalcase.severity = suggestion
+dotnet_naming_rule.public_fields_should_be_pascalcase.symbols = public_fields
+dotnet_naming_rule.public_fields_should_be_pascalcase.style = pascalcase
+
+dotnet_naming_rule.private_fields_should_be__camelcase.severity = suggestion
+dotnet_naming_rule.private_fields_should_be__camelcase.symbols = private_fields
+dotnet_naming_rule.private_fields_should_be__camelcase.style = _camelcase
+
+dotnet_naming_rule.private_static_fields_should_be_s_camelcase.severity = suggestion
+dotnet_naming_rule.private_static_fields_should_be_s_camelcase.symbols = private_static_fields
+dotnet_naming_rule.private_static_fields_should_be_s_camelcase.style = s_camelcase
+
+dotnet_naming_rule.public_constant_fields_should_be_pascalcase.severity = suggestion
+dotnet_naming_rule.public_constant_fields_should_be_pascalcase.symbols = public_constant_fields
+dotnet_naming_rule.public_constant_fields_should_be_pascalcase.style = pascalcase
+
+dotnet_naming_rule.private_constant_fields_should_be_pascalcase.severity = suggestion
+dotnet_naming_rule.private_constant_fields_should_be_pascalcase.symbols = private_constant_fields
+dotnet_naming_rule.private_constant_fields_should_be_pascalcase.style = pascalcase
+
+dotnet_naming_rule.public_static_readonly_fields_should_be_pascalcase.severity = suggestion
+dotnet_naming_rule.public_static_readonly_fields_should_be_pascalcase.symbols = public_static_readonly_fields
+dotnet_naming_rule.public_static_readonly_fields_should_be_pascalcase.style = pascalcase
+
+dotnet_naming_rule.private_static_readonly_fields_should_be_pascalcase.severity = suggestion
+dotnet_naming_rule.private_static_readonly_fields_should_be_pascalcase.symbols = private_static_readonly_fields
+dotnet_naming_rule.private_static_readonly_fields_should_be_pascalcase.style = pascalcase
+
+dotnet_naming_rule.enums_should_be_pascalcase.severity = suggestion
+dotnet_naming_rule.enums_should_be_pascalcase.symbols = enums
+dotnet_naming_rule.enums_should_be_pascalcase.style = pascalcase
+
+dotnet_naming_rule.local_functions_should_be_pascalcase.severity = suggestion
+dotnet_naming_rule.local_functions_should_be_pascalcase.symbols = local_functions
+dotnet_naming_rule.local_functions_should_be_pascalcase.style = pascalcase
+
+dotnet_naming_rule.non_field_members_should_be_pascalcase.severity = suggestion
+dotnet_naming_rule.non_field_members_should_be_pascalcase.symbols = non_field_members
+dotnet_naming_rule.non_field_members_should_be_pascalcase.style = pascalcase
+
+# Symbol specifications
+
+dotnet_naming_symbols.interfaces.applicable_kinds = interface
+dotnet_naming_symbols.interfaces.applicable_accessibilities = public, internal, private, protected, protected_internal, private_protected
+dotnet_naming_symbols.interfaces.required_modifiers = 
+
+dotnet_naming_symbols.enums.applicable_kinds = enum
+dotnet_naming_symbols.enums.applicable_accessibilities = public, internal, private, protected, protected_internal, private_protected
+dotnet_naming_symbols.enums.required_modifiers = 
+
+dotnet_naming_symbols.events.applicable_kinds = event
+dotnet_naming_symbols.events.applicable_accessibilities = public, internal, private, protected, protected_internal, private_protected
+dotnet_naming_symbols.events.required_modifiers = 
+
+dotnet_naming_symbols.methods.applicable_kinds = method
+dotnet_naming_symbols.methods.applicable_accessibilities = public, internal, private, protected, protected_internal, private_protected
+dotnet_naming_symbols.methods.required_modifiers = 
+
+dotnet_naming_symbols.properties.applicable_kinds = property
+dotnet_naming_symbols.properties.applicable_accessibilities = public, internal, private, protected, protected_internal, private_protected
+dotnet_naming_symbols.properties.required_modifiers = 
+
+dotnet_naming_symbols.public_fields.applicable_kinds = field
+dotnet_naming_symbols.public_fields.applicable_accessibilities = public, internal
+dotnet_naming_symbols.public_fields.required_modifiers = 
+
+dotnet_naming_symbols.private_fields.applicable_kinds = field
+dotnet_naming_symbols.private_fields.applicable_accessibilities = private, protected, protected_internal, private_protected
+dotnet_naming_symbols.private_fields.required_modifiers = 
+
+dotnet_naming_symbols.private_static_fields.applicable_kinds = field
+dotnet_naming_symbols.private_static_fields.applicable_accessibilities = private, protected, protected_internal, private_protected
+dotnet_naming_symbols.private_static_fields.required_modifiers = static
+
+dotnet_naming_symbols.types_and_namespaces.applicable_kinds = namespace, class, struct, interface, enum
+dotnet_naming_symbols.types_and_namespaces.applicable_accessibilities = public, internal, private, protected, protected_internal, private_protected
+dotnet_naming_symbols.types_and_namespaces.required_modifiers = 
+
+dotnet_naming_symbols.non_field_members.applicable_kinds = property, event, method
+dotnet_naming_symbols.non_field_members.applicable_accessibilities = public, internal, private, protected, protected_internal, private_protected
+dotnet_naming_symbols.non_field_members.required_modifiers = 
+
+dotnet_naming_symbols.type_parameters.applicable_kinds = namespace
+dotnet_naming_symbols.type_parameters.applicable_accessibilities = *
+dotnet_naming_symbols.type_parameters.required_modifiers = 
+
+dotnet_naming_symbols.private_constant_fields.applicable_kinds = field
+dotnet_naming_symbols.private_constant_fields.applicable_accessibilities = private, protected, protected_internal, private_protected
+dotnet_naming_symbols.private_constant_fields.required_modifiers = const
+
+dotnet_naming_symbols.local_variables.applicable_kinds = local
+dotnet_naming_symbols.local_variables.applicable_accessibilities = local
+dotnet_naming_symbols.local_variables.required_modifiers = 
+
+dotnet_naming_symbols.local_constants.applicable_kinds = local
+dotnet_naming_symbols.local_constants.applicable_accessibilities = local
+dotnet_naming_symbols.local_constants.required_modifiers = const
+
+dotnet_naming_symbols.parameters.applicable_kinds = parameter
+dotnet_naming_symbols.parameters.applicable_accessibilities = *
+dotnet_naming_symbols.parameters.required_modifiers = 
+
+dotnet_naming_symbols.public_constant_fields.applicable_kinds = field
+dotnet_naming_symbols.public_constant_fields.applicable_accessibilities = public, internal
+dotnet_naming_symbols.public_constant_fields.required_modifiers = const
+
+dotnet_naming_symbols.public_static_readonly_fields.applicable_kinds = field
+dotnet_naming_symbols.public_static_readonly_fields.applicable_accessibilities = public, internal
+dotnet_naming_symbols.public_static_readonly_fields.required_modifiers = readonly, static
+
+dotnet_naming_symbols.private_static_readonly_fields.applicable_kinds = field
+dotnet_naming_symbols.private_static_readonly_fields.applicable_accessibilities = private, protected, protected_internal, private_protected
+dotnet_naming_symbols.private_static_readonly_fields.required_modifiers = readonly, static
+
+dotnet_naming_symbols.local_functions.applicable_kinds = local_function
+dotnet_naming_symbols.local_functions.applicable_accessibilities = *
+dotnet_naming_symbols.local_functions.required_modifiers = 
+
+# Naming styles
+
+dotnet_naming_style.pascalcase.required_prefix = 
+dotnet_naming_style.pascalcase.required_suffix = 
+dotnet_naming_style.pascalcase.word_separator = 
+dotnet_naming_style.pascalcase.capitalization = pascal_case
+
+dotnet_naming_style.ipascalcase.required_prefix = I
+dotnet_naming_style.ipascalcase.required_suffix = 
+dotnet_naming_style.ipascalcase.word_separator = 
+dotnet_naming_style.ipascalcase.capitalization = pascal_case
+
+dotnet_naming_style.tpascalcase.required_prefix = T
+dotnet_naming_style.tpascalcase.required_suffix = 
+dotnet_naming_style.tpascalcase.word_separator = 
+dotnet_naming_style.tpascalcase.capitalization = pascal_case
+
+dotnet_naming_style._camelcase.required_prefix = _
+dotnet_naming_style._camelcase.required_suffix = 
+dotnet_naming_style._camelcase.word_separator = 
+dotnet_naming_style._camelcase.capitalization = camel_case
+
+dotnet_naming_style.camelcase.required_prefix = 
+dotnet_naming_style.camelcase.required_suffix = 
+dotnet_naming_style.camelcase.word_separator = 
+dotnet_naming_style.camelcase.capitalization = camel_case
+
+dotnet_naming_style.s_camelcase.required_prefix = s_
+dotnet_naming_style.s_camelcase.required_suffix = 
+dotnet_naming_style.s_camelcase.word_separator = 
+dotnet_naming_style.s_camelcase.capitalization = camel_case
+tab_width = 4
+indent_size = 4
+end_of_line = crlf
+
+
+```
+// File: templates\content\csharp\CAFSln\build.ps1
+
+```powershell
+dotnet run .build/targets.cs -- $args
+
+```
+// File: templates\content\csharp\CAFSln\build.sh
+
+```bash
+#!/usr/bin/env bash
+
+# Exit immediately if a command exits with a non-zero status.
+set -e
+
+# This script is a simple wrapper around the C# build script.
+# It passes all command-line arguments directly to the script.
+# The '--' separates arguments for 'dotnet run' from arguments for the application.
+dotnet run .build/targets.cs -- "$@"
+
+```
+// File: templates\content\csharp\CAFSln\CAFConsole.slnx
+
+```text
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+  </Configurations>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path="dotnet.config" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/CAFConsole.Data/CAFConsole.Data.csproj" />
+    <Project Path="src/CAFConsole.Lib/CAFConsole.Lib.csproj" />
+    <Project Path="src/CAFConsole.Tests/CAFConsole.Tests.csproj" />
+    <Project Path="src/CAFConsole/CAFConsole.csproj" />
+  </Folder>
+</Solution>
+
+```
+// File: templates\content\csharp\CAFSln\dotnet.config
+
+```text
+[dotnet.test.runner]
+name = "Microsoft.Testing.Platform"
+
+```
+// File: templates\content\powershell\.gitkeep
+
+```text
+
+```
+// File: templates\henry-js.Net.Templates.csproj
+
+```xml
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- The package metadata. Fill in the properties marked as TODO below -->
+    <!-- Follow the instructions on https://learn.microsoft.com/en-us/nuget/create-packages/package-authoring-best-practices -->
+    <PackageId>henryjs.Net.Templates</PackageId>
+    <Title>henry-js.Net.Templates</Title>
+    <Authors>henry-js</Authors>
+    <Description>Collection of .NET templates</Description>
+    <PackageTags>templates</PackageTags>
+    <PackageProjectUrl>https://github.com/henry-js/henry-js.Net.Templates</PackageProjectUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <!-- Keep package type as 'Template' to show the package as a template package on nuget.org and make your template available in dotnet new search.-->
+    <PackageType>Template</PackageType>
+    <TargetFramework>net9.0</TargetFramework>
+    <IncludeContentInPack>true</IncludeContentInPack>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <ContentTargetFolders>content</ContentTargetFolders>
+    <NoWarn>$(NoWarn);NU5128</NoWarn>
+    <NoDefaultExcludes>true</NoDefaultExcludes>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <MinVerDefaultPreReleaseIdentifiers>preview</MinVerDefaultPreReleaseIdentifiers>
+  </PropertyGroup>
+  <PropertyGroup>
+    <LocalizeTemplates>false</LocalizeTemplates>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference
+      Include="Microsoft.TemplateEngine.Tasks"
+      Version="*"
+      PrivateAssets="all"
+      IsImplicitlyDefined="true"
+    />
+    <PackageReference Include="MinVer" Version="6.0.0">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="content\**\*" Exclude="content\**\bin\**;content\**\obj\**" />
+    <Compile Remove="**\*" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\README.md" Pack="true" PackagePath="" />
+  </ItemGroup>
+</Project>
+
+```
