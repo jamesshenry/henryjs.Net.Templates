@@ -48,16 +48,19 @@
                 "**/.artifacts/**",
                 "src/CAFConsole.Data/**",
                 "ef.rsp"
+            ],
+            "modifiers": [
+                {
+                    "condition": "(!withDataAccess)",
+                    "exclude": [
+                        "ef.rsp"
+                    ]
+                }
             ]
         },
         {
             "source": "../src/CAFConsole.Data/",
             "target": "./src/CAFConsole.Data/",
-            "condition": "(withDataAccess)"
-        },
-        {
-            "source": "../ef.rsp",
-            "target": "./ef.rsp",
             "condition": "(withDataAccess)"
         }
     ]
