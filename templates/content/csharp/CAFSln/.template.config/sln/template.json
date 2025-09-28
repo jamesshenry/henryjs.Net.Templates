@@ -46,8 +46,7 @@
                 "**/*.dist",
                 "**/.vs/**",
                 "**/.artifacts/**",
-                "src/CAFConsole.Data/**",
-                "ef.rsp"
+                "src/CAFConsole.Data/**"
             ],
             "modifiers": [
                 {

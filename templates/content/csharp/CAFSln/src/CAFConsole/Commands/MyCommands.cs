@@ -1,6 +1,6 @@
 using System.Text.Json;
 using CAFConsole.Configuration;
-using CAFConsole.Data;
+using CAFConsole.Data.Sqlite;
 using CAFConsole.Services;
 using ConsoleAppFramework;
 using Microsoft.EntityFrameworkCore;

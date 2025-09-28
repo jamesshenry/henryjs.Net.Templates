@@ -5,7 +5,9 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <!--#if (!withDataAccess) -->
     <PublishAot>true</PublishAot>
+    <!--#endif -->
     <PublishSingleFile>true</PublishSingleFile>
     <PublishSelfContained>true</PublishSelfContained>
     <DebugType>embedded</DebugType>
