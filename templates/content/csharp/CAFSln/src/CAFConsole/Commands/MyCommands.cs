@@ -1,22 +1,31 @@
 using System.Text.Json;
 using CAFConsole.Configuration;
-using CAFConsole.Data.Sqlite;
 using CAFConsole.Services;
 using ConsoleAppFramework;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+#if (withDataAccess)
+using CAFConsole.Data.Sqlite;
+#endif
+
+#if (withDataAccess)
+using Microsoft.EntityFrameworkCore;
+#endif
+
 
 namespace CAFConsole.Commands;
 
 public class MyCommands(
     ILogger<MyCommands> logger,
     IService service,
-    IOptions<CliConfig> options,
+    IOptions<CAFConsoleSettings> options
+#if (withDataAccess)
+    ,
     AppDbContext dbContext
+#endif
 )
 {
-    private readonly CliConfig config = options.Value;
+    private readonly CAFConsoleSettings config = options.Value;
 
     /// <summary>Root command test.</summary>
     /// <param name="msg">-m, Message to show.</param>
@@ -43,11 +52,16 @@ public class MyCommands(
         var opts = options;
         logger.LogInformation("Displaying IOptions wrapped config");
 
-        var text = JsonSerializer.Serialize(config, typeof(CliConfig), CliConfigContext.Default);
+        var text = JsonSerializer.Serialize(
+            config,
+            typeof(CAFConsoleSettings),
+            CAFConsoleSettingsContext.Default
+        );
 
         Console.WriteLine(text);
     }
 
+#if (withDataAccess)
     /// <summary>
     /// Applies any pending Entity Framework migrations to the database.
     /// </summary>
@@ -67,4 +81,5 @@ public class MyCommands(
 
         logger.LogInformation("Successfully applied all pending migrations.");
     }
+#endif
 }

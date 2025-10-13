@@ -19,7 +19,16 @@
   "sources": [
     {
       "source": "../src/CAFConsole/",
-      "target": "./"
+      "target": "./",
+      "exclude": [
+        "**/[Bb]in/**",
+        "**/[Oo]bj/**",
+        ".template.config/**/*",
+        "**/*.filelist",
+        "**/*.user",
+        "**/*.lock.json",
+        "sqlitedb.json"
+      ]
     }
   ],
   "symbols": {

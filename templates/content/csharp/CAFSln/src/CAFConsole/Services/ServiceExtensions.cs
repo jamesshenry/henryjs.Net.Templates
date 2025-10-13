@@ -1,6 +1,8 @@
 using CAFConsole.Commands;
+#if (withDataAccess)
 using CAFConsole.Data;
 using CAFConsole.Data.Services;
+#endif
 using CAFConsole.Logging;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

@@ -32,7 +32,6 @@ app.Add<MyCommands>();
 app.UseFilter<ExceptionFilter>();
 
 await app.RunAsync(args);
-
 #if DEBUG
 Console.WriteLine("Press any key to exit...");
 Console.ReadKey();

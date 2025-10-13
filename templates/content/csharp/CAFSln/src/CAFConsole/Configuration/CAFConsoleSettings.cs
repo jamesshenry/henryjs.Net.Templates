@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 
 namespace CAFConsole.Configuration;
 
-public class CliConfig
+public class CAFConsoleSettings
 {
     public int Port { get; set; }
     public bool Enabled { get; set; }
@@ -16,5 +16,5 @@ public class CliConfig
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
     PropertyNameCaseInsensitive = true
 )]
-[JsonSerializable(typeof(CliConfig))]
-public partial class CliConfigContext : JsonSerializerContext;
+[JsonSerializable(typeof(CAFConsoleSettings))]
+public partial class CAFConsoleSettingsContext : JsonSerializerContext;
