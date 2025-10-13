@@ -27,7 +27,7 @@
         "**/*.filelist",
         "**/*.user",
         "**/*.lock.json",
-        "sqlitedb.json"
+        "**/sqlitedb.json"
       ]
     }
   ],
