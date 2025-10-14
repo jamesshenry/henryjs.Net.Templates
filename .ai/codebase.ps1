@@ -1,18 +1,21 @@
+# codebase.ps1 - Generate codebase documentation for AI analysis
+# This script creates a comprehensive text file containing the directory structure
+# and all source code files from the templates directory for AI processing.
 
-$repoRoot = Resolve-Path "$PSScriptRoot/.."
+$repoRoot = git rev-parse --show-toplevel
 
-Write-Host $repoRoot
+Write-Host "Repository root: $repoRoot"
 
 $sourceDirectory = Join-Path $repoRoot 'templates'
 Write-Host $sourceDirectory
 
-$outputDir = "$repoRoot/.github/instructions"
+$outputDir = "$repoRoot/.ai/outputs"
 if (-not (Test-Path $outputDir)) {
     New-Item -ItemType Directory -Path $outputDir -Force
 }
 
 $outputPath = Join-Path $outputDir 'codebase.txt'
-Write-Host $outputPath
+Write-Host "Output path: $outputPath"
 
 # Build directory tree
 $directoryTree = Get-ChildItem -Directory -Path $sourceDirectory -Recurse -Exclude obj, bin | ForEach-Object {
