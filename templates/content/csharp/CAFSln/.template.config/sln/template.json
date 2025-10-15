@@ -30,6 +30,13 @@
             "displayName": "Include Data Access Layer",
             "description": "If true, scaffolds a CAFConsole.Data project with Entity Framework Core and SQLite.",
             "defaultValue": "false"
+        },
+        "withAgentFiles": {
+            "type": "parameter",
+            "datatype": "bool",
+            "displayName": "Include AI Agent Files",
+            "description": "If true, includes .ai folder and agents.md file for AI-assisted development.",
+            "defaultValue": "false"
         }
     },
     "sources": [
@@ -54,6 +61,13 @@
                     "exclude": [
                         "ef.rsp",
                         "**/sqlitedb.json"
+                    ]
+                },
+                {
+                    "condition": "(!withAgentFiles)",
+                    "exclude": [
+                        ".ai/**",
+                        "agents.md"
                     ]
                 }
             ]
