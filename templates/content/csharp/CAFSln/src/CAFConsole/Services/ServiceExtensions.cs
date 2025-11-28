@@ -1,7 +1,9 @@
 using CAFConsole.Commands;
 using CAFConsole.Data;
 using CAFConsole.Data.Services;
+using CAFConsole.Infrastructure;
 using CAFConsole.Logging;
+using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -41,11 +43,6 @@ public static class ServiceExtensions
                 )
                 .Enrich.WithProperty("ApplicationName", "<APP NAME>")
                 .Enrich.With<SourceClassEnricher>()
-                // .WriteTo.Console(
-                //     outputTemplate: outputTemplate,
-                //     theme: AnsiConsoleTheme.Sixteen,
-                //     restrictedToMinimumLevel: LogEventLevel.Information
-                // )
                 .CreateLogger()
         );
     }
@@ -53,25 +50,34 @@ public static class ServiceExtensions
     public static IServiceCollection RegisterAppServices(this IServiceCollection services)
     {
         var configuration = CreateConfiguration();
+        var rawConnectionString =
+            configuration.GetConnectionString("AppDb")
+            ?? throw new InvalidOperationException("connectionString cannot be null");
+
+        var (finalConnectionString, dbFilePath) = ResolveConnectionString(rawConnectionString);
+
+        Initializer.EnsureDbUpToDate(dbFilePath);
 
         services.AddLogging(ConfigureSerilog);
         services.AddSingleton(configuration);
         services.AddSingleton<IService, ServiceImplementation>();
         services.AddSingleton<MyCommands>();
-        services.AddCAFConsoleData(
-            configuration.GetConnectionString("AppDb")
-                ?? throw new InvalidOperationException("connectionString cannot be null")
-        );
-
-        // var databaseOptions = configuration
-        //     .GetSection(DatabaseOptions.SectionName)
-        //     .Get<DatabaseOptions>();
-
-        // databaseOptions.FilePath = Path.Combine(
-        //     AppConstants.DataDirectory,
-        //     databaseOptions.FileName
-        // );
+        services.AddCAFConsoleData(finalConnectionString);
 
         return services;
+    }
+
+    private static (string finalConnectionString, string dbFilePath) ResolveConnectionString(
+        string rawString
+    )
+    {
+        var builder = new SqliteConnectionStringBuilder(rawString);
+        string relativePath = builder.DataSource;
+
+        string cleanName = relativePath.Replace("{XDG_DATA_HOME}", "").TrimStart('/', '\\');
+        string absolutePath = Path.Combine(AppConstants.DataDirectory, cleanName);
+        builder.DataSource = absolutePath;
+
+        return (builder.ToString(), absolutePath);
     }
 }

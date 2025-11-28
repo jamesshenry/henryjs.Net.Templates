@@ -12,11 +12,6 @@
         "language": "C#",
         "type": "solution"
     },
-    "guids": [
-        "A94D195E-48BF-48FF-93B2-D552C966323D",
-        "351F6972-61B5-4676-9E74-F376ACA883C8",
-        "8C43405D-427E-424E-A4F5-489D19EF1F7B"
-    ],
     "sourceName": "CAFConsole",
     "symbols": {
         "IsSolution": {
@@ -28,7 +23,7 @@
             "type": "parameter",
             "datatype": "bool",
             "displayName": "Include Data Access Layer",
-            "description": "If true, scaffolds a CAFConsole.Data project with Entity Framework Core and SQLite.",
+            "description": "If true, scaffolds a CAFConsole.Data project with SQLite.",
             "defaultValue": "false"
         },
         "withAgentFiles": {
@@ -58,10 +53,7 @@
             "modifiers": [
                 {
                     "condition": "(!withDataAccess)",
-                    "exclude": [
-                        "ef.rsp",
-                        "**/sqlitedb.json"
-                    ]
+                    "exclude": []
                 },
                 {
                     "condition": "(!withAgentFiles)",
@@ -75,6 +67,11 @@
         {
             "source": "../src/CAFConsole.Data/",
             "target": "./src/CAFConsole.Data/",
+            "condition": "(withDataAccess)"
+        },
+        {
+            "source": "../src/CAFConsole.Migrator/",
+            "target": "./src/CAFConsole.Migrator/",
             "condition": "(withDataAccess)"
         }
     ]

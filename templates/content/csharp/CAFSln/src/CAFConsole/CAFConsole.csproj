@@ -37,7 +37,7 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\CAFConsole.Shared\CAFConsole.Shared.csproj" />
     <ProjectReference Include="..\CAFConsole.Data\CAFConsole.Data.csproj" />
+    <ProjectReference Include="..\CAFConsole.Shared\CAFConsole.Shared.csproj" />
   </ItemGroup>
 </Project>
