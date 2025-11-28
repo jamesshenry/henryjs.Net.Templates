@@ -1,4 +1,3 @@
-using CAFConsole.Data.Sqlite;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -6,22 +5,12 @@ namespace CAFConsole.Data.Services;
 
 public static class ServiceExtensions
 {
-    public static IServiceCollection AddSqliteDb(
+    public static IServiceCollection AddCAFConsoleData(
         this IServiceCollection services,
-        DatabaseOptions databaseOptions
+        string connectionString
     )
     {
-        if (databaseOptions is null || string.IsNullOrEmpty(databaseOptions.FilePath))
-        {
-            throw new InvalidOperationException(
-                $"The '{DatabaseOptions.SectionName}' configuration section is missing or the 'DbPath' is empty."
-            );
-        }
-
-        var finalConnectionString = new SqliteConnectionStringBuilder
-        {
-            DataSource = databaseOptions.FilePath,
-        }.ToString();
+        connectionString = new SqliteConnectionStringBuilder(connectionString).ToString();
 
         services.AddSingleton<ITaskRepository>(_ => new TaskRepository(connectionString));
         return services;

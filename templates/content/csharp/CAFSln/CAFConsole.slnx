@@ -8,7 +8,8 @@
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/CAFConsole.Data/CAFConsole.Data.csproj" />
-    <Project Path="src/CAFConsole.Lib/CAFConsole.Lib.csproj" />
+    <Project Path="src/CAFConsole.Migrator/CAFConsole.Migrator.csproj" />
+    <Project Path="src/CAFConsole.Shared/CAFConsole.Shared.csproj" />
     <Project Path="src/CAFConsole.Tests/CAFConsole.Tests.csproj" />
     <Project Path="src/CAFConsole/CAFConsole.csproj" />
   </Folder>

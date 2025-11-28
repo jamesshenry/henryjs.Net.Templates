@@ -16,4 +16,7 @@
       Version="10.0.0"
     />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\CAFConsole.Shared\CAFConsole.Shared.csproj" />
+  </ItemGroup>
 </Project>

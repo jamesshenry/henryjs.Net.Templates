@@ -1,8 +1,6 @@
 using CAFConsole.Commands;
-#if (withDataAccess)
 using CAFConsole.Data;
 using CAFConsole.Data.Services;
-#endif
 using CAFConsole.Logging;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,14 +17,10 @@ public static class ServiceExtensions
     public static IConfiguration CreateConfiguration()
     {
         var configBuilder = new ConfigurationBuilder().AddJsonFile(
-            "config.json",
+            "appsettings.json",
             optional: false,
             reloadOnChange: true
         );
-
-#if (withDataAccess)
-        configBuilder.AddJsonFile("sqlitedb.json", optional: false, reloadOnChange: true);
-#endif
 
         return configBuilder.Build();
     }
@@ -47,11 +41,11 @@ public static class ServiceExtensions
                 )
                 .Enrich.WithProperty("ApplicationName", "<APP NAME>")
                 .Enrich.With<SourceClassEnricher>()
-                .WriteTo.Console(
-                    outputTemplate: outputTemplate,
-                    theme: AnsiConsoleTheme.Sixteen,
-                    restrictedToMinimumLevel: LogEventLevel.Information
-                )
+                // .WriteTo.Console(
+                //     outputTemplate: outputTemplate,
+                //     theme: AnsiConsoleTheme.Sixteen,
+                //     restrictedToMinimumLevel: LogEventLevel.Information
+                // )
                 .CreateLogger()
         );
     }
@@ -64,19 +58,19 @@ public static class ServiceExtensions
         services.AddSingleton(configuration);
         services.AddSingleton<IService, ServiceImplementation>();
         services.AddSingleton<MyCommands>();
-
-#if (withDataAccess)
-        var databaseOptions = configuration
-            .GetSection(DatabaseOptions.SectionName)
-            .Get<DatabaseOptions>();
-
-        databaseOptions.FilePath = Path.Combine(
-            AppConstants.DataDirectory,
-            databaseOptions.FileName
+        services.AddCAFConsoleData(
+            configuration.GetConnectionString("AppDb")
+                ?? throw new InvalidOperationException("connectionString cannot be null")
         );
 
-        services.AddSqliteDb(databaseOptions);
-#endif
+        // var databaseOptions = configuration
+        //     .GetSection(DatabaseOptions.SectionName)
+        //     .Get<DatabaseOptions>();
+
+        // databaseOptions.FilePath = Path.Combine(
+        //     AppConstants.DataDirectory,
+        //     databaseOptions.FileName
+        // );
 
         return services;
     }
