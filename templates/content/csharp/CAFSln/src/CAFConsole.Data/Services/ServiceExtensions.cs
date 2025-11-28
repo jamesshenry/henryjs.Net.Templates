@@ -1,6 +1,5 @@
 using CAFConsole.Data.Sqlite;
 using Microsoft.Data.Sqlite;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace CAFConsole.Data.Services;
@@ -24,7 +23,7 @@ public static class ServiceExtensions
             DataSource = databaseOptions.FilePath,
         }.ToString();
 
-        services.AddDbContext<AppDbContext>(options => options.UseSqlite(finalConnectionString));
+        services.AddSingleton<ITaskRepository>(_ => new TaskRepository(connectionString));
         return services;
     }
 }
