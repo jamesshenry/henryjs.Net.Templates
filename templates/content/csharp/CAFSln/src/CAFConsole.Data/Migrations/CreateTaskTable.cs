@@ -1,6 +1,6 @@
 using FluentMigrator;
 
-namespace CAFConsole.Migrator.Migrations;
+namespace CAFConsole.Data.Migrations;
 
 [Migration(1)]
 public class CreateTaskTable : Migration

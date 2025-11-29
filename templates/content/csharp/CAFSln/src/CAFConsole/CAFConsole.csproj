@@ -36,8 +36,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\CAFConsole.Data\CAFConsole.Data.csproj" />
+<ItemGroup>
+    <ProjectReference Include="..\CAFConsole.Data\CAFConsole.Data.csproj" 
+                      Condition="'$(withDataAccess)' == 'true'" />
     <ProjectReference Include="..\CAFConsole.Shared\CAFConsole.Shared.csproj" />
   </ItemGroup>
 </Project>

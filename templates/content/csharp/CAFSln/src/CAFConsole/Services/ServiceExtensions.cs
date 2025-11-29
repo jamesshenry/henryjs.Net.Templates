@@ -1,9 +1,6 @@
 using CAFConsole.Commands;
-using CAFConsole.Data;
-using CAFConsole.Data.Services;
 using CAFConsole.Infrastructure;
 using CAFConsole.Logging;
-using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -11,6 +8,12 @@ using Serilog;
 using Serilog.Events;
 using Serilog.Formatting.Display;
 using Serilog.Sinks.SystemConsole.Themes;
+
+#if (withDataAccess)
+using CAFConsole.Data;
+using CAFConsole.Data.Services;
+using Microsoft.Data.Sqlite;
+#endif
 
 namespace CAFConsole.Services;
 
@@ -47,9 +50,11 @@ public static class ServiceExtensions
         );
     }
 
-    public static IServiceCollection RegisterAppServices(this IServiceCollection services)
+public static IServiceCollection RegisterAppServices(this IServiceCollection services)
     {
         var configuration = CreateConfiguration();
+        
+#if (withDataAccess)
         var rawConnectionString =
             configuration.GetConnectionString("AppDb")
             ?? throw new InvalidOperationException("connectionString cannot be null");
@@ -57,16 +62,21 @@ public static class ServiceExtensions
         var (finalConnectionString, dbFilePath) = ResolveConnectionString(rawConnectionString);
 
         Initializer.EnsureDbUpToDate(dbFilePath);
+#endif
 
         services.AddLogging(ConfigureSerilog);
         services.AddSingleton(configuration);
         services.AddSingleton<IService, ServiceImplementation>();
         services.AddSingleton<MyCommands>();
+        
+#if (withDataAccess)
         services.AddCAFConsoleData(finalConnectionString);
+#endif
 
         return services;
     }
 
+#if (withDataAccess)
     private static (string finalConnectionString, string dbFilePath) ResolveConnectionString(
         string rawString
     )
@@ -80,4 +90,5 @@ public static class ServiceExtensions
 
         return (builder.ToString(), absolutePath);
     }
+#endif
 }

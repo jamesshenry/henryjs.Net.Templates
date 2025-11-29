@@ -12,6 +12,7 @@ public static class Initializer
         }
     }
 
+#if (withDataAccess)
     public static void EnsureDbUpToDate(string dbPath)
     {
         var migratorName = "CAFConsole.Migrator.exe";
@@ -39,4 +40,5 @@ public static class Initializer
             );
         }
     }
+#endif
 }
