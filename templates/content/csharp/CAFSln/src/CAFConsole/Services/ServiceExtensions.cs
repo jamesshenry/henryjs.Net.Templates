@@ -8,7 +8,6 @@ using Serilog;
 using Serilog.Events;
 using Serilog.Formatting.Display;
 using Serilog.Sinks.SystemConsole.Themes;
-
 #if (withDataAccess)
 using CAFConsole.Data;
 using CAFConsole.Data.Services;
@@ -50,28 +49,27 @@ public static class ServiceExtensions
         );
     }
 
-public static IServiceCollection RegisterAppServices(this IServiceCollection services)
+    public static IServiceCollection RegisterAppServices(this IServiceCollection services)
     {
         var configuration = CreateConfiguration();
-        
+
 #if (withDataAccess)
         var rawConnectionString =
             configuration.GetConnectionString("AppDb")
             ?? throw new InvalidOperationException("connectionString cannot be null");
 
         var (finalConnectionString, dbFilePath) = ResolveConnectionString(rawConnectionString);
+        services.AddCAFConsoleData(finalConnectionString);
 
-        Initializer.EnsureDbUpToDate(dbFilePath);
+        // Build service provider temporarily for migrations
+        var tempServiceProvider = services.BuildServiceProvider();
+        Initializer.EnsureDbUpToDate(tempServiceProvider, dbFilePath);
 #endif
 
         services.AddLogging(ConfigureSerilog);
         services.AddSingleton(configuration);
         services.AddSingleton<IService, ServiceImplementation>();
         services.AddSingleton<MyCommands>();
-        
-#if (withDataAccess)
-        services.AddCAFConsoleData(finalConnectionString);
-#endif
 
         return services;
     }

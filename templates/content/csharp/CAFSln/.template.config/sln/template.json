@@ -69,10 +69,6 @@
             "target": "./src/CAFConsole.Data/",
             "condition": "(withDataAccess)"
         },
-        {
-            "source": "../src/CAFConsole.Migrator/",
-            "target": "./src/CAFConsole.Migrator/",
-            "condition": "(withDataAccess)"
-        }
+
     ]
 }
