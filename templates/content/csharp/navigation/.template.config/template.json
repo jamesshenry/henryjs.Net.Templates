@@ -1,0 +1,17 @@
+{
+  "$schema": "http://json.schemastore.org/template",
+  "author": "AstroTrade",
+  "classifications": [
+    "Common",
+    "Console"
+  ],
+  "name": "MVVM Navigation Manager",
+  "identity": "jamesshenry.Navigation",
+  "shortName": "navvvm",
+  "tags": {
+    "language": "C#",
+    "type": "item"
+  },
+  "sourceName": "NavMan",
+  "preferNameDirectory": true
+}
