@@ -1,6 +1,7 @@
 ﻿using CAFConsole;
 using CAFConsole.Commands;
 using CAFConsole.Filters;
+using CAFConsole.Infrastructure;
 using CAFConsole.Services;
 using ConsoleAppFramework;
 using DotNetPathUtils;
@@ -18,7 +19,7 @@ if (OperatingSystem.IsWindows())
         .Run();
 }
 
-AppInitializer.Initialize();
+Initializer.Initialize();
 
 var services = new ServiceCollection();
 

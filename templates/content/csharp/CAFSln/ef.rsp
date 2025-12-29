@@ -1,6 +1,0 @@
---project
-./src/CAFConsole.Data
---startup-project
-./src/CAFConsole
---context
-AppDbContext

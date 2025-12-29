@@ -1,30 +1,39 @@
-using CAFConsole.Data.Sqlite;
+using FluentMigrator.Runner;
 using Microsoft.Data.Sqlite;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace CAFConsole.Data.Services;
 
 public static class ServiceExtensions
 {
-    public static IServiceCollection AddSqliteDb(
+    public static IServiceCollection AddCAFConsoleData(
         this IServiceCollection services,
-        DatabaseOptions databaseOptions
+        string connectionString
     )
     {
-        if (databaseOptions is null || string.IsNullOrEmpty(databaseOptions.FilePath))
-        {
-            throw new InvalidOperationException(
-                $"The '{DatabaseOptions.SectionName}' configuration section is missing or the 'DbPath' is empty."
-            );
-        }
+        connectionString = new SqliteConnectionStringBuilder(connectionString).ToString();
 
-        var finalConnectionString = new SqliteConnectionStringBuilder
-        {
-            DataSource = databaseOptions.FilePath,
-        }.ToString();
+        services.AddSingleton<ITaskRepository>(_ => new TaskRepository(connectionString));
 
-        services.AddDbContext<AppDbContext>(options => options.UseSqlite(finalConnectionString));
+        // Add FluentMigrator services
+        services
+            .AddFluentMigratorCore()
+            .ConfigureRunner(rb =>
+                rb.AddSQLite()
+                    .WithGlobalConnectionString(connectionString)
+                    .ScanIn(typeof(ServiceExtensions).Assembly)
+                    .For.Migrations()
+            )
+            .AddLogging(lb => lb.AddFluentMigratorConsole());
+
         return services;
+    }
+
+    public static void RunMigrations(IServiceProvider serviceProvider)
+    {
+        using var scope = serviceProvider.CreateScope();
+        var runner = scope.ServiceProvider.GetRequiredService<IMigrationRunner>();
+        runner.MigrateUp();
     }
 }

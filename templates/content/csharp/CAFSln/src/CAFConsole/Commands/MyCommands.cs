@@ -4,14 +4,6 @@ using CAFConsole.Services;
 using ConsoleAppFramework;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-#if (withDataAccess)
-using CAFConsole.Data.Sqlite;
-#endif
-
-#if (withDataAccess)
-using Microsoft.EntityFrameworkCore;
-#endif
-
 
 namespace CAFConsole.Commands;
 
@@ -19,10 +11,6 @@ public class MyCommands(
     ILogger<MyCommands> logger,
     IService service,
     IOptions<CAFConsoleSettings> options
-#if (withDataAccess)
-    ,
-    AppDbContext dbContext
-#endif
 )
 {
     private readonly CAFConsoleSettings config = options.Value;
@@ -60,26 +48,4 @@ public class MyCommands(
 
         Console.WriteLine(text);
     }
-
-#if (withDataAccess)
-    /// <summary>
-    /// Applies any pending Entity Framework migrations to the database.
-    /// </summary>
-    [Command("migrate-db")]
-    public async Task MigrateDatabase()
-    {
-        logger.LogInformation("Checking for and applying pending database migrations...");
-
-        var pendingMigrations = await dbContext.Database.GetPendingMigrationsAsync();
-        if (!pendingMigrations.Any())
-        {
-            logger.LogInformation("Database is already up to date. No migrations to apply.");
-            return;
-        }
-
-        await dbContext.Database.MigrateAsync();
-
-        logger.LogInformation("Successfully applied all pending migrations.");
-    }
-#endif
 }

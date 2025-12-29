@@ -38,7 +38,7 @@ app.OnExecuteAsync(async _ =>
     const string configuration = "Release";
     const string solution = "CAFConsole.slnx";
     const string publishProject = null!; // = "src/CAFConsole/CAFConsole.csproj";
-    const string packProject = null!; // = "src/CAFConsole.Lib/CAFConsole.Lib.csproj";
+    const string packProject = null!; // = "src/CAFConsole.Shared/CAFConsole.Shared.csproj";
 
     var root = Directory.GetCurrentDirectory();
 
