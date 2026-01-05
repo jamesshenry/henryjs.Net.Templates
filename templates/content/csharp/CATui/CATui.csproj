@@ -5,11 +5,6 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <PublishSingleFile>true</PublishSingleFile>
-    <PublishSelfContained>true</PublishSelfContained>
-    <DebugType>embedded</DebugType>
-    <MinVerDefaultPreReleaseIdentifiers>preview.0</MinVerDefaultPreReleaseIdentifiers>
-    <EnableConfigurationBindingGenerator>true</EnableConfigurationBindingGenerator>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Diagnostics" Version="8.4.0" />
@@ -34,8 +29,6 @@
     <PackageReference Include="Xdg.Directories" Version="0.1.2" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="config.kdl">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <None Include="config.kdl" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>
