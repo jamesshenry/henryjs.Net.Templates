@@ -1,36 +1,42 @@
-using CATui.ViewModels;
-using Terminal.Gui.Input;
+using CATui.Binding;
+using CATui.Core.ViewModels;
 using Terminal.Gui.ViewBase;
 using Terminal.Gui.Views;
 
 namespace CATui.Views;
 
-public class HomeView : View
+public class HomeView : BindableView<HomeViewModel>
 {
-    private readonly HomeViewModel _vm;
+    private readonly Label _lbl;
 
     public HomeView(HomeViewModel vm)
+        : base(vm)
     {
-        _vm = vm;
         Width = Dim.Fill();
         Height = Dim.Fill();
 
-        var lbl = new Label
-        {
-            X = Pos.Center(),
-            Y = Pos.Center(),
-            Text = vm.WelcomeMessage,
-        };
+        _lbl = new Label { X = Pos.Center(), Y = Pos.Center() };
 
         var btn = new Button
         {
             X = Pos.Center(),
-            Y = Pos.Bottom(lbl),
+            Y = Pos.Bottom(_lbl),
             Text = "Go Settings",
         };
 
-        btn.Accepting += (s, e) => _vm.NavigateSettingsCommand.Execute(null);
-        Add(lbl);
+        btn.Accepting += (s, e) => ViewModel.NavigateSettingsCommand.Execute(null);
+        Add(_lbl);
         Add(btn);
+    }
+
+    protected override void SetupBindings()
+    {
+        BindingContext.AddBinding(
+            _lbl.BindTextOneWay(
+                ViewModel,
+                () => ViewModel.WelcomeMessage,
+                nameof(ViewModel.WelcomeMessage)
+            )
+        );
     }
 }

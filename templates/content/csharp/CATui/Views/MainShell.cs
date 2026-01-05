@@ -1,7 +1,9 @@
 using System.ComponentModel;
-using System.Xml.Linq;
+using CATui.Binding;
+using CATui.Binding;
+using CATui.Core.Interfaces;
+using CATui.Core.ViewModels;
 using CATui.Navigation;
-using CATui.ViewModels;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Terminal.Gui.ViewBase;
 using Terminal.Gui.Views;
@@ -15,21 +17,18 @@ public class MainShell : Window
     private readonly IServiceProvider _serviceProvider;
     private readonly View _contentContainer;
     private readonly Label _statusLabel;
+    private readonly BindingContext _bindingContext;
 
     public MainShell(MainViewModel viewModel, INavigationService navService, IServiceProvider sp)
     {
         _viewModel = viewModel;
         _navService = navService;
         _serviceProvider = sp;
+        _bindingContext = new BindingContext();
 
         Title = _viewModel.AppTitle;
 
-        _statusLabel = new Label
-        {
-            Y = Pos.AnchorEnd(1),
-            Width = Dim.Fill(),
-            Text = _viewModel.StatusText,
-        };
+        _statusLabel = new Label { Y = Pos.AnchorEnd(1), Width = Dim.Fill() };
 
         _contentContainer = new View
         {
@@ -41,16 +40,23 @@ public class MainShell : Window
 
         Add(_contentContainer, _statusLabel);
 
-        _viewModel.PropertyChanged += OnViewModelPropertyChanged;
+        // Set up bindings
+        _bindingContext.AddBinding(
+            _statusLabel.BindTextOneWay(
+                _viewModel,
+                () => _viewModel.StatusText,
+                nameof(_viewModel.StatusText)
+            )
+        );
+
         _navService.PropertyChanged += OnNavServicePropertyChanged;
 
         _viewModel.NavigateHomeCommand.Execute(null);
     }
 
-    private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    public void Dispose()
     {
-        if (e.PropertyName == nameof(MainViewModel.StatusText))
-            _statusLabel.Text = _viewModel.StatusText;
+        _bindingContext.Dispose();
     }
 
     private void OnNavServicePropertyChanged(object? sender, PropertyChangedEventArgs e)

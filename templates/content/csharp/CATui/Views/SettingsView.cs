@@ -1,38 +1,30 @@
-using CATui.ViewModels;
+using CATui.Binding;
+using CATui.Core.ViewModels;
 using Terminal.Gui.ViewBase;
 using Terminal.Gui.Views;
 
 namespace CATui.Views;
 
-public class SettingsView : View
+public class SettingsView : BindableView<SettingsViewModel>
 {
-    private readonly SettingsViewModel _viewModel;
+    private readonly TextField _txtName;
+    private readonly CheckBox _chkLog;
 
     public SettingsView(SettingsViewModel viewModel)
+        : base(viewModel)
     {
-        _viewModel = viewModel;
         Width = Dim.Fill();
         Height = Dim.Fill();
 
         var lblName = new Label { Text = "Username:" };
-        var txtName = new TextField
-        {
-            X = Pos.Right(lblName) + 2,
-            Width = Dim.Fill(5),
-            Text = _viewModel.Username,
-        };
+        _txtName = new TextField { X = Pos.Right(lblName) + 2, Width = Dim.Fill(5) };
 
-        var chkLog = new CheckBox
-        {
-            Y = Pos.Bottom(lblName) + 1,
-            Text = "Enable Background Logging",
-            CheckedState = _viewModel.EnableLogging ? CheckState.Checked : CheckState.UnChecked,
-        };
+        _chkLog = new CheckBox { Y = Pos.Bottom(lblName) + 1, Text = "Enable Background Logging" };
 
         var btnSave = new Button
         {
             X = 0,
-            Y = Pos.Bottom(chkLog) + 2,
+            Y = Pos.Bottom(_chkLog) + 2,
             Text = "Save Settings",
         };
 
@@ -43,23 +35,30 @@ public class SettingsView : View
             Text = "Cancel",
         };
 
-        txtName.TextChanged += (_, args) => _viewModel.Username = txtName.Text;
-        chkLog.Accepted += (_, args) =>
-            _viewModel.EnableLogging = chkLog.CheckedState == CheckState.Checked;
+        btnSave.Accepting += (s, e) => ViewModel.SaveCommand.Execute(null);
+        btnCancel.Accepting += (s, e) => ViewModel.CancelCommand.Execute(null);
 
-        _viewModel.PropertyChanged += (s, e) =>
-        {
-            if (e.PropertyName == nameof(_viewModel.Username))
-                txtName.Text = _viewModel.Username;
-            if (e.PropertyName == nameof(_viewModel.EnableLogging))
-                chkLog.CheckedState = _viewModel.EnableLogging
-                    ? CheckState.Checked
-                    : CheckState.UnChecked;
-        };
+        Add(lblName, _txtName, _chkLog, btnSave, btnCancel);
+    }
 
-        btnSave.Accepting += (s, e) => _viewModel.SaveCommand.Execute(null);
-        btnCancel.Accepting += (s, e) => _viewModel.CancelCommand.Execute(null);
+    protected override void SetupBindings()
+    {
+        BindingContext.AddBinding(
+            _txtName.BindTextTwoWay(
+                ViewModel,
+                () => ViewModel.Username,
+                value => ViewModel.Username = value,
+                nameof(ViewModel.Username)
+            )
+        );
 
-        Add(lblName, txtName, chkLog, btnSave, btnCancel);
+        BindingContext.AddBinding(
+            _chkLog.BindCheckedTwoWay(
+                ViewModel,
+                () => ViewModel.EnableLogging,
+                value => ViewModel.EnableLogging = value,
+                nameof(ViewModel.EnableLogging)
+            )
+        );
     }
 }

@@ -1,5 +1,4 @@
-using CATui.Modals;
-using CATui.ViewModels;
+using CATui.Core.ViewModels;
 using CATui.Views;
 using Microsoft.Extensions.DependencyInjection;
 using Terminal.Gui.ViewBase;
@@ -13,7 +12,6 @@ public static class ViewLocator
         {
             HomeViewModel => sp.GetRequiredService<HomeView>(),
             SettingsViewModel => sp.GetRequiredService<SettingsView>(),
-            ConfirmDialogViewModel => sp.GetRequiredService<ConfirmDialog>(), // Inherits Dialog
             _ => throw new ArgumentException($"No view registered for {viewModel.GetType()}"),
         };
 }

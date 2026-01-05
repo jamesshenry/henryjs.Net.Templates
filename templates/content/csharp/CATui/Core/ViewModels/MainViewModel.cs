@@ -1,14 +1,15 @@
-using CATui.Navigation;
-using CATui.Services;
+using CATui.Core.Interfaces;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.Logging;
 
-namespace CATui.ViewModels;
+namespace CATui.Core.ViewModels;
 
-public partial class MainViewModel : ObservableObject, INavigationAware
+public sealed partial class MainViewModel : ObservableObject
 {
     private readonly INavigationService _navigationService;
     private readonly IDialogService _dialogService;
+    private readonly ILogger<MainViewModel> _logger;
 
     [ObservableProperty]
     private string _appTitle = "CATui";
@@ -16,20 +17,15 @@ public partial class MainViewModel : ObservableObject, INavigationAware
     [ObservableProperty]
     private string _statusText = "Ready";
 
-    public MainViewModel(INavigationService navigationService, IDialogService dialogService)
+    public MainViewModel(
+        INavigationService navigationService,
+        IDialogService dialogService,
+        ILogger<MainViewModel> logger
+    )
     {
         _navigationService = navigationService;
         _dialogService = dialogService;
-    }
-
-    public void OnNavigatedFrom()
-    {
-        throw new NotImplementedException();
-    }
-
-    public void OnNavigatedTo()
-    {
-        throw new NotImplementedException();
+        _logger = logger;
     }
 
     [RelayCommand]

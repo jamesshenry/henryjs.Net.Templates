@@ -1,12 +1,11 @@
-using CATui.Navigation;
-using CATui.Services;
+using CATui.Core.Interfaces;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 
-namespace CATui.ViewModels;
+namespace CATui.Core.ViewModels;
 
-public partial class SettingsViewModel : ObservableObject
+public sealed partial class SettingsViewModel : ObservableObject, IBindableView
 {
     private readonly IDialogService _dialogService;
     private readonly INavigationService _navService;
@@ -48,4 +47,14 @@ public partial class SettingsViewModel : ObservableObject
 
     [RelayCommand]
     private void Cancel() => _navService.NavigateTo<HomeViewModel>();
+
+    public void OnNavigatedFrom()
+    {
+        // Override in derived classes if needed
+    }
+
+    public void OnNavigatedTo()
+    {
+        // Override in derived classes if needed
+    }
 }

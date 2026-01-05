@@ -1,11 +1,9 @@
 using CATui.Configuration;
+using CATui.Core.Interfaces;
+using CATui.Core.ViewModels;
 using CATui.Logging;
-using CATui.Modals;
-using CATui.Navigation;
-using CATui.ViewModels;
 using CATui.Views;
 using Kuddle.Extensions.Configuration;
-using Kuddle.Serialization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -15,7 +13,6 @@ using Serilog.Events;
 using Serilog.Filters;
 using Serilog.Formatting.Display;
 using Terminal.Gui.App;
-using Terminal.Gui.Views;
 
 namespace CATui.Services;
 
@@ -54,7 +51,6 @@ public static class ServiceExtensions
                 lc.ReadFrom.Configuration(builder.Configuration)
                     .Enrich.FromLogContext()
                     .Enrich.With<SourceClassEnricher>()
-                    // Host Logs (Framework/System)
                     .WriteTo.Conditional(
                         evt =>
                             Matching.FromSource("Microsoft").Invoke(evt)
@@ -66,7 +62,6 @@ public static class ServiceExtensions
                                 rollingInterval: RollingInterval.Day
                             )
                     )
-                    // App Logs (Business Logic)
                     .WriteTo.Conditional(
                         evt =>
                             !Matching.FromSource("Microsoft").Invoke(evt)
@@ -90,10 +85,8 @@ public static class ServiceExtensions
         var settings = new CATuiAppConfig();
         builder.Configuration.GetSection("tui-app-settings").Bind(settings);
 
-        // Core Terminal.Gui v2 Instance
         builder.Services.AddSingleton(_ => Application.Create());
 
-        // MVVM Infrastructure
         builder.Services.AddSingleton<INavigationService, NavigationService>();
         builder.Services.AddSingleton<IDialogService, DialogService>();
         builder.Services.AddSingleton<IAppLifetime, AppLifetime>();
@@ -101,55 +94,13 @@ public static class ServiceExtensions
 
     public static void AddTuiScreens(this HostApplicationBuilder builder)
     {
-        // ViewModels
         builder.Services.AddSingleton<MainViewModel>();
         builder.Services.AddTransient<HomeViewModel>();
         builder.Services.AddTransient<SettingsViewModel>();
-        builder.Services.AddTransient<ConfirmDialogViewModel>();
 
-        // Views
         builder.Services.AddSingleton<MainShell>();
         builder.Services.AddTransient<HomeView>();
         builder.Services.AddTransient<SettingsView>();
-        builder.Services.AddTransient<ConfirmDialog>();
-    }
-}
-
-public interface IDialogService
-{
-    bool Confirm(string title, string message, string okText = "Yes", string cancelText = "No");
-    void ShowInfo(string title, string message);
-    void ShowError(string title, string message);
-}
-
-public class DialogService : IDialogService
-{
-    private readonly IApplication _app;
-
-    public DialogService(IApplication app)
-    {
-        _app = app;
-    }
-
-    public bool Confirm(
-        string title,
-        string message,
-        string okText = "Yes",
-        string cancelText = "No"
-    )
-    {
-        int? result = MessageBox.Query(_app, title, message, okText, cancelText);
-        return result == 0;
-    }
-
-    public void ShowInfo(string title, string message)
-    {
-        MessageBox.Query(_app, title, message, "Ok");
-    }
-
-    public void ShowError(string title, string message)
-    {
-        MessageBox.ErrorQuery(_app, title, message);
     }
 }
 

@@ -1,19 +1,11 @@
-using System.ComponentModel;
+using CATui.Core.Interfaces;
+using CATui.Navigation;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.Extensions.DependencyInjection;
 using Terminal.Gui.App;
 using Terminal.Gui.Views;
 
-namespace CATui.Navigation;
-
-public interface INavigationService : INotifyPropertyChanged
-{
-    ObservableObject CurrentViewModel { get; }
-    void NavigateTo<TViewModel>()
-        where TViewModel : ObservableObject;
-    TResult? ShowModal<TViewModel, TResult>(Action<TViewModel>? configure = null)
-        where TViewModel : class, IModalViewModel<TResult>;
-}
+namespace CATui.Services;
 
 public class NavigationService : ObservableObject, INavigationService
 {
@@ -26,21 +18,32 @@ public class NavigationService : ObservableObject, INavigationService
         _app = app;
     }
 
+    private ObservableObject? _currentViewModel;
+
     public ObservableObject CurrentViewModel
     {
-        get => field;
-        private set => SetProperty(ref field, value);
+        get => _currentViewModel!;
+        private set => SetProperty(ref _currentViewModel, value);
     }
 
     public void NavigateTo<TViewModel>()
         where TViewModel : ObservableObject
     {
-        (CurrentViewModel as INavigationAware)?.OnNavigatedFrom();
+        // Call OnNavigatedFrom on current ViewModel if it supports it
+        if (CurrentViewModel is IBindableView currentViewModel)
+        {
+            currentViewModel.OnNavigatedFrom();
+        }
+
         CurrentViewModel = _services.GetRequiredService<TViewModel>();
-        (CurrentViewModel as INavigationAware)?.OnNavigatedTo();
+
+        // Call OnNavigatedTo on new ViewModel if it supports it
+        if (CurrentViewModel is IBindableView newViewModel)
+        {
+            newViewModel.OnNavigatedTo();
+        }
     }
 
-    // In NavigationService
     public TResult? ShowModal<TViewModel, TResult>(Action<TViewModel>? configure = null)
         where TViewModel : class, IModalViewModel<TResult>
     {
@@ -54,7 +57,7 @@ public class NavigationService : ObservableObject, INavigationService
             handler = (s, e) =>
             {
                 _app.RequestStop();
-                vm.RequestClose -= handler; // Cleanup
+                vm.RequestClose -= handler;
             };
             vm.RequestClose += handler;
             _app.Run(runnable);
@@ -66,21 +69,6 @@ public class NavigationService : ObservableObject, INavigationService
             _app.Run(host);
         }
 
-        return vm.Result; // VM stores the result before RequestStop() was called
+        return vm.Result;
     }
-}
-
-internal interface INavigationAware
-{
-    void OnNavigatedTo();
-    void OnNavigatedFrom();
-}
-
-public interface IModalViewModel<TResult>
-{
-    // The result the modal will return (e.g., a bool, a string, or a complex object)
-    TResult? Result { get; }
-
-    // An event to tell the View: "I am done, please stop the loop"
-    event EventHandler? RequestClose;
 }
