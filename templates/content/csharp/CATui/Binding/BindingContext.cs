@@ -32,6 +32,7 @@ public class BindingContext : IDisposable
             }
             _bindings.Clear();
             _disposed = true;
+            GC.SuppressFinalize(this);
         }
     }
 }

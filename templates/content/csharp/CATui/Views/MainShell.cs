@@ -1,6 +1,5 @@
 using System.ComponentModel;
 using CATui.Binding;
-using CATui.Binding;
 using CATui.Core.Interfaces;
 using CATui.Core.ViewModels;
 using CATui.Navigation;
@@ -54,9 +53,13 @@ public class MainShell : Window
         _viewModel.NavigateHomeCommand.Execute(null);
     }
 
-    public void Dispose()
+    protected override void Dispose(bool disposing)
     {
-        _bindingContext.Dispose();
+        if (disposing)
+        {
+            _bindingContext.Dispose();
+        }
+        base.Dispose(disposing);
     }
 
     private void OnNavServicePropertyChanged(object? sender, PropertyChangedEventArgs e)

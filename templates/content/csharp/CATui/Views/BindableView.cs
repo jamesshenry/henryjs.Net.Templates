@@ -9,7 +9,7 @@ namespace CATui.Views;
 /// Base class for Views that are bound to ViewModels.
 /// Provides lifecycle management and binding context.
 /// </summary>
-public abstract class BindableView<TViewModel> : View, IDisposable, IBindableView
+public abstract class BindableView<TViewModel> : View, IBindableView
     where TViewModel : ObservableObject
 {
     /// <summary>
@@ -65,13 +65,14 @@ public abstract class BindableView<TViewModel> : View, IDisposable, IBindableVie
     /// <summary>
     /// Disposes the view and cleans up bindings.
     /// </summary>
-    public void Dispose()
+    protected override void Dispose(bool disposing)
     {
-        if (!_disposed)
+        if (disposing && !_disposed)
         {
             ViewModel.PropertyChanged -= OnViewModelPropertyChanged;
             BindingContext.Dispose();
             _disposed = true;
         }
+        base.Dispose(disposing);
     }
 }
