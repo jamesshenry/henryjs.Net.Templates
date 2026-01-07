@@ -4,6 +4,7 @@ using DotNetPathUtils;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
+using Spectre.Console;
 using Terminal.Gui.App;
 using Velopack;
 
@@ -18,10 +19,8 @@ if (OperatingSystem.IsWindows())
         .Run();
 }
 
-Log.Logger = new LoggerConfiguration()
-    .MinimumLevel.Debug()
-    .WriteTo.File("logs/bootstrap.log")
-    .CreateLogger();
+Log.Logger = ServiceExtensions.CreateAppLogger();
+Log.Information("Application starting...");
 
 try
 {
@@ -40,6 +39,7 @@ try
 catch (Exception ex)
 {
     Log.Fatal(ex, "Host terminated unexpectedly");
+    AnsiConsole.WriteException(ex);
 }
 finally
 {

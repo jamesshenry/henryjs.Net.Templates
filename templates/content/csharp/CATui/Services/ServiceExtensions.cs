@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Serilog;
+using Serilog.Core;
 using Serilog.Events;
 using Serilog.Filters;
 using Serilog.Formatting.Display;
@@ -18,63 +19,29 @@ namespace CATui.Services;
 
 public static class ServiceExtensions
 {
-    public static void ConfigureSerilog(this ILoggingBuilder builder)
-    {
-        const string outputTemplate =
-            "[{Timestamp:HH:mm:ss} {Level:u3}] ({SourceClass}) {Message:lj}{NewLine}{Exception}";
-        builder.AddSerilog(
-            new LoggerConfiguration()
-                .MinimumLevel.Debug()
-                .WriteTo.File(
-                    formatter: new MessageTemplateTextFormatter(outputTemplate),
-                    Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs", "app-.log"),
-                    restrictedToMinimumLevel: LogEventLevel.Debug,
-                    shared: true,
-                    rollingInterval: RollingInterval.Day
-                )
-                .Enrich.WithProperty("ApplicationName", "<APP NAME>")
-                .Enrich.With<SourceClassEnricher>()
-                .CreateLogger()
-        );
-    }
+    private const string OutputTemplate =
+        "[{Timestamp:HH:mm:ss} {Level:u3}] ({SourceClass}) {Message:lj}{NewLine}{Exception}";
+
+    /// <summary>
+    /// Creates the application logger. Call this early in Program.cs to set Log.Logger.
+    /// </summary>
+    public static Logger CreateAppLogger() =>
+        new LoggerConfiguration()
+            .MinimumLevel.Information()
+            .WriteTo.File(
+                formatter: new MessageTemplateTextFormatter(OutputTemplate),
+                Path.Combine("logs", "app-.log"),
+                restrictedToMinimumLevel: LogEventLevel.Debug,
+                shared: true,
+                rollingInterval: RollingInterval.Day
+            )
+            .Enrich.FromLogContext()
+            .Enrich.With<SourceClassEnricher>()
+            .CreateLogger();
 
     public static void AddTuiLogging(this HostApplicationBuilder builder)
     {
-        builder.Services.AddSerilog(
-            (services, lc) =>
-            {
-                const string hostTemplate =
-                    "[{Timestamp:HH:mm:ss} {Level:u3}] {SourceContext}: {Message:lj}{NewLine}{Exception}";
-                const string appTemplate =
-                    "[{Timestamp:HH:mm:ss} {Level:u3}] ({SourceClass}) {Message:lj}{NewLine}{Exception}";
-
-                lc.ReadFrom.Configuration(builder.Configuration)
-                    .Enrich.FromLogContext()
-                    .Enrich.With<SourceClassEnricher>()
-                    .WriteTo.Conditional(
-                        evt =>
-                            Matching.FromSource("Microsoft").Invoke(evt)
-                            || Matching.FromSource("System").Invoke(evt),
-                        wt =>
-                            wt.File(
-                                "logs/host-.log",
-                                outputTemplate: hostTemplate,
-                                rollingInterval: RollingInterval.Day
-                            )
-                    )
-                    .WriteTo.Conditional(
-                        evt =>
-                            !Matching.FromSource("Microsoft").Invoke(evt)
-                            && !Matching.FromSource("System").Invoke(evt),
-                        wt =>
-                            wt.File(
-                                "logs/app-.log",
-                                outputTemplate: appTemplate,
-                                rollingInterval: RollingInterval.Day
-                            )
-                    );
-            }
-        );
+        builder.Services.AddSerilog();
     }
 
     public static void AddTuiInfrastructure(this HostApplicationBuilder builder)
