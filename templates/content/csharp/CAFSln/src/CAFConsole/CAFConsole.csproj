@@ -18,8 +18,8 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="DotNetPathUtils" Version="0.3.1" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.0" />
-    <PackageReference Include="MinVer" Version="6.0.0">
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.2" />
+    <PackageReference Include="MinVer" Version="7.0.0">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
@@ -36,9 +36,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-<ItemGroup>
-    <ProjectReference Include="..\CAFConsole.Data\CAFConsole.Data.csproj" 
-                      Condition="'$(withDataAccess)' == 'true'" />
+  <ItemGroup>
     <ProjectReference Include="..\CAFConsole.Shared\CAFConsole.Shared.csproj" />
   </ItemGroup>
 </Project>

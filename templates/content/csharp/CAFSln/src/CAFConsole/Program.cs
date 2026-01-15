@@ -1,11 +1,8 @@
-﻿using CAFConsole;
-using CAFConsole.Commands;
-using CAFConsole.Filters;
+﻿using CAFConsole.Filters;
 using CAFConsole.Infrastructure;
 using CAFConsole.Services;
 using ConsoleAppFramework;
 using DotNetPathUtils;
-using Microsoft.Extensions.DependencyInjection;
 using Velopack;
 
 if (OperatingSystem.IsWindows())
@@ -21,14 +18,15 @@ if (OperatingSystem.IsWindows())
 
 Initializer.Initialize();
 
-var services = new ServiceCollection();
-
-services.RegisterAppServices();
-ConsoleApp.ServiceProvider = services.BuildServiceProvider();
-
-var app = ConsoleApp.Create();
-
-app.Add<MyCommands>();
+var app = ConsoleApp
+    .Create()
+    .ConfigureEmptyConfiguration(configure => configure.CreateConfiguration())
+    .ConfigureServices(
+        (configuration, services) =>
+        {
+            services.RegisterAppServices(configuration);
+        }
+    );
 
 app.UseFilter<ExceptionFilter>();
 
