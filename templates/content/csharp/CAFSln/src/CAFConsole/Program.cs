@@ -2,36 +2,47 @@
 using CAFConsole.Infrastructure;
 using CAFConsole.Services;
 using ConsoleAppFramework;
-using DotNetPathUtils;
+using Serilog;
 using Velopack;
 
-if (OperatingSystem.IsWindows())
+Log.Logger = ServiceExtensions.CreateAppLogger();
+
+try
 {
-    var appDirectory = Path.GetDirectoryName(AppContext.BaseDirectory)!;
-    var pathHelper = new PathEnvironmentHelper(new PathUtilsOptions() { PrefixWithPeriod = false });
-    VelopackApp
-        .Build()
-        .OnAfterInstallFastCallback(v => pathHelper.EnsureDirectoryIsInPath(appDirectory))
-        .OnBeforeUninstallFastCallback(v => pathHelper.RemoveDirectoryFromPath(appDirectory!))
-        .Run();
-}
+    if (OperatingSystem.IsWindows())
+    {
+        VelopackApp
+            .Build()
+            .OnAfterInstallFastCallback(v => StartupTasks.Install(v))
+            .OnBeforeUninstallFastCallback(v => StartupTasks.Uninstall(v))
+            .Run();
+    }
 
-Initializer.Initialize();
+    await StartupTasks.InitializeAsync();
 
-var app = ConsoleApp
-    .Create()
-    .ConfigureEmptyConfiguration(configure => configure.CreateConfiguration())
-    .ConfigureServices(
-        (configuration, services) =>
-        {
-            services.RegisterAppServices(configuration);
-        }
-    );
+    var app = ConsoleApp
+        .Create()
+        .ConfigureEmptyConfiguration(configure => configure.CreateConfiguration())
+        .ConfigureServices(
+            (configuration, services) =>
+            {
+                services.RegisterAppServices(configuration, Log.Logger);
+            }
+        );
 
-app.UseFilter<ExceptionFilter>();
+    app.UseFilter<ExceptionFilter>();
 
-await app.RunAsync(args);
+    await app.RunAsync(args);
 #if DEBUG
-Console.WriteLine("Press any key to exit...");
-Console.ReadKey();
+    Console.WriteLine("Press any key to exit...");
+    Console.ReadKey();
 #endif
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "Application terminated unexpectedly during startup");
+}
+finally
+{
+    await Log.CloseAndFlushAsync();
+}

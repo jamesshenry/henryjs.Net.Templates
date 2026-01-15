@@ -137,7 +137,7 @@ app.OnExecuteAsync(async _ =>
         ["publish"],
         () =>
         {
-            const string velopackId = "typical";
+            const string velopackId = "CAFConsole";
             var version = versionOption.Value();
             ArgumentException.ThrowIfNullOrWhiteSpace(version, nameof(version));
             var rid = ridOption.Value();
@@ -153,7 +153,7 @@ app.OnExecuteAsync(async _ =>
                 : "[win]";
             return RunAsync(
                 "dotnet",
-                $"vpk {directive} pack --packId {velopackId} --packVersion {version} --packDir \"{publishDir}\" --outputDir \"{outputDir}\" --yes"
+                $"vpk {directive} pack --packId {velopackId} --packVersion {version} --packDir \"{publishDir}\" --outputDir \"{outputDir}\" --shortcuts \"None\" --yes"
             );
         }
     );
