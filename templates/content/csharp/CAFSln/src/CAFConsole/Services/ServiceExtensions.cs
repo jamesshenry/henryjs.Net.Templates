@@ -1,8 +1,8 @@
 using CAFConsole.Commands;
+using CAFConsole.Configuration;
 using CAFConsole.Logging;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Core;
 using Serilog.Events;
@@ -27,10 +27,11 @@ public static class ServiceExtensions
             .MinimumLevel.Information()
             .WriteTo.File(
                 formatter: new MessageTemplateTextFormatter(OutputTemplate),
-                Path.Combine("logs", "app-.log"),
+                Path.Combine(AppPaths.StateHome, "logs", "app-.log"),
                 restrictedToMinimumLevel: LogEventLevel.Debug,
                 shared: true,
-                rollingInterval: RollingInterval.Day
+                rollingInterval: RollingInterval.Day,
+                retainedFileCountLimit: 31
             )
             .Enrich.FromLogContext()
             .Enrich.WithProperty("ApplicationName", "<APP NAME>")

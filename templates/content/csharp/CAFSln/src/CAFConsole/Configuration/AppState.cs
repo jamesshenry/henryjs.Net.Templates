@@ -2,11 +2,10 @@ using System.Text.Json.Serialization;
 
 namespace CAFConsole.Configuration;
 
-public class CAFConsoleSettings
+public class AppState
 {
-    public int Port { get; set; }
-    public bool Enabled { get; set; }
-    public string? ApiUrl { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public string LastRunVersion { get; set; } = "0.0.0";
 }
 
 [JsonSourceGenerationOptions(
@@ -16,5 +15,5 @@ public class CAFConsoleSettings
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
     PropertyNameCaseInsensitive = true
 )]
-[JsonSerializable(typeof(CAFConsoleSettings))]
-public partial class CAFConsoleSettingsContext : JsonSerializerContext;
+[JsonSerializable(typeof(AppState))]
+public partial class AppStateContext : JsonSerializerContext;

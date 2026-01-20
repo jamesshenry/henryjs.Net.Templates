@@ -18,7 +18,7 @@ try
             .Run();
     }
 
-    await StartupTasks.InitializeAsync();
+    await StartupTasks.InitializeAsync(Log.Logger);
 
     var app = ConsoleApp
         .Create()

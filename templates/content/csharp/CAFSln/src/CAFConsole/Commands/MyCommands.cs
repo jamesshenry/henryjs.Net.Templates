@@ -7,13 +7,9 @@ using Microsoft.Extensions.Options;
 
 namespace CAFConsole.Commands;
 
-public class MyCommands(
-    ILogger<MyCommands> logger,
-    IService service,
-    IOptions<CAFConsoleSettings> options
-)
+public class MyCommands(ILogger<MyCommands> logger, IService service, IOptions<AppConfig> options)
 {
-    private readonly CAFConsoleSettings config = options.Value;
+    private readonly AppConfig config = options.Value;
 
     /// <summary>Root command test.</summary>
     /// <param name="msg">-m, Message to show.</param>
@@ -40,11 +36,7 @@ public class MyCommands(
         var opts = options;
         logger.LogInformation("Displaying IOptions wrapped config");
 
-        var text = JsonSerializer.Serialize(
-            config,
-            typeof(CAFConsoleSettings),
-            CAFConsoleSettingsContext.Default
-        );
+        var text = JsonSerializer.Serialize(config, typeof(AppConfig), AppConfigContext.Default);
 
         Console.WriteLine(text);
     }
