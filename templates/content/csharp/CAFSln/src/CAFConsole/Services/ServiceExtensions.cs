@@ -14,28 +14,29 @@ public static class ServiceExtensions
 {
     private const string OutputTemplate =
         "[{Timestamp:HH:mm:ss} {Level:u3}] ({SourceClass}) {Message:lj}{NewLine}{Exception}";
+    private static readonly LoggingLevelSwitch ConsoleLevelSwitch = new(LogEventLevel.Warning);
 
     public static IConfigurationBuilder CreateConfiguration(
         this IConfigurationBuilder configuration
     )
     {
-        return configuration.AddJsonFile("config.json", optional: false, reloadOnChange: true);
+        return configuration.AddJsonFile("config.json", optional: true, reloadOnChange: true);
     }
 
     public static Logger CreateAppLogger() =>
         new LoggerConfiguration()
-            .MinimumLevel.Information()
+            .MinimumLevel.Verbose()
+            .Enrich.FromLogContext()
+            .Enrich.WithProperty("ApplicationName", nameof(CAFConsole))
+            .Enrich.With<SourceClassEnricher>()
+            .WriteTo.Console(outputTemplate: OutputTemplate, levelSwitch: ConsoleLevelSwitch)
             .WriteTo.File(
                 formatter: new MessageTemplateTextFormatter(OutputTemplate),
-                Path.Combine(AppPaths.StateHome, "logs", "app-.log"),
+                path: Path.Combine(AppPaths.LogDirectory, "app-.log"),
                 restrictedToMinimumLevel: LogEventLevel.Debug,
-                shared: true,
                 rollingInterval: RollingInterval.Day,
                 retainedFileCountLimit: 31
             )
-            .Enrich.FromLogContext()
-            .Enrich.WithProperty("ApplicationName", "<APP NAME>")
-            .Enrich.With<SourceClassEnricher>()
             .CreateLogger();
 
     public static IServiceCollection RegisterAppServices(
@@ -45,9 +46,10 @@ public static class ServiceExtensions
     )
     {
         services.AddSerilog(logger: appLogger, dispose: appLogger is null);
+        services.AddSingleton(ConsoleLevelSwitch);
         services.AddSingleton(configuration);
         services.AddSingleton<IService, ServiceImplementation>();
-        services.AddSingleton<MyCommands>();
+        services.AddSingleton<CAFConsoleCommands>();
 
         return services;
     }

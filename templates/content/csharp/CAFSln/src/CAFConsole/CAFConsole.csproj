@@ -6,11 +6,18 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <PublishAot>true</PublishAot>
-    <PublishSingleFile>true</PublishSingleFile>
-    <PublishSelfContained>true</PublishSelfContained>
     <DebugType>embedded</DebugType>
-    <MinVerDefaultPreReleaseIdentifiers>preview.0</MinVerDefaultPreReleaseIdentifiers>
+    <MinVerDefaultPreReleaseIdentifiers>preview</MinVerDefaultPreReleaseIdentifiers>
     <EnableConfigurationBindingGenerator>true</EnableConfigurationBindingGenerator>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(PackAsTool)' == 'true'">
+    <ToolCommandName>CAFConsole</ToolCommandName>
+    <PackageId>CAFConsole</PackageId>
+    <Authors>jamesshenry</Authors>
+    <PublishTrimmed>true</PublishTrimmed>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <StripSymbols>true</StripSymbols>
+    <DefineConstants>$(DefineConstants);PUBLISH_AS_TOOL</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="ConsoleAppFramework" Version="5.7.13">

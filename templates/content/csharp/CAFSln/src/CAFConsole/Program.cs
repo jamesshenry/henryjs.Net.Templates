@@ -1,5 +1,6 @@
 ﻿using CAFConsole.Filters;
 using CAFConsole.Infrastructure;
+using CAFConsole.Logging;
 using CAFConsole.Services;
 using ConsoleAppFramework;
 using Serilog;
@@ -9,6 +10,7 @@ Log.Logger = ServiceExtensions.CreateAppLogger();
 
 try
 {
+#if !PUBLISH_AS_TOOL
     if (OperatingSystem.IsWindows())
     {
         VelopackApp
@@ -18,11 +20,23 @@ try
             .Run();
     }
 
-    await StartupTasks.InitializeAsync(Log.Logger);
+#endif
 
     var app = ConsoleApp
         .Create()
-        .ConfigureEmptyConfiguration(configure => configure.CreateConfiguration())
+        .ConfigureGlobalOptions(
+            (ref builder) =>
+            {
+                var verbosity = builder.AddGlobalOption(
+                    "-v|--verbosity",
+                    "",
+                    VerbosityLevel.Minimal
+                );
+                return new GlobalOptions(verbosity);
+            }
+        );
+
+    app.ConfigureEmptyConfiguration(configure => configure.CreateConfiguration())
         .ConfigureServices(
             (configuration, services) =>
             {
@@ -30,17 +44,14 @@ try
             }
         );
 
-    app.UseFilter<ExceptionFilter>();
+    app.UseFilter<LoggingLevelFilter>();
 
     await app.RunAsync(args);
-#if DEBUG
-    Console.WriteLine("Press any key to exit...");
-    Console.ReadKey();
-#endif
 }
-catch (Exception ex)
+catch (Exception ex) when (ex is not OperationCanceledException)
 {
-    Log.Fatal(ex, "Application terminated unexpectedly during startup");
+    Log.Fatal(ex, "Application terminated unexpectedly");
+    Environment.ExitCode = 1;
 }
 finally
 {
