@@ -1,40 +1,36 @@
-# .github/workflows/ci.yml
-name: Continuous Integration
+name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
-  build-and-test:
+  test:
     name: Test on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Required for MinVer
 
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        global-json-file: global.json
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
 
-    - name: Restore .NET tools
-      run: dotnet tool restore
+      - name: Run Pipeline
+        # We target 'test'. ModularPipelines handles Restore -> MinVer -> Build -> Test
+        run: dotnet run --project .build/Build.csproj -- --target test
 
-    - name: Run Tests
-      run: dotnet run .build/targets.cs test
-
-    - name: Upload test results
-      if: always() # Run this step even if tests fail
-      uses: actions/upload-artifact@v4
-      with:
-        name: test-results-${{ matrix.os }}
-        path: TestResults/
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.os }}
+          path: TestResults/

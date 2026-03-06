@@ -1,0 +1,11 @@
+<Project>
+  <PropertyGroup>
+    <!-- Enable central package management, https://learn.microsoft.com/en-us/nuget/consume-packages/Central-Package-Management -->
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Roslynator.Analyzers" Version="4.15.0" />
+    <PackageReference Include="Roslynator.CodeAnalysis.Analyzers" Version="4.15.0" />
+    <PackageReference Include="Roslynator.Formatting.Analyzers" Version="4.15.0" />
+  </ItemGroup>
+</Project>

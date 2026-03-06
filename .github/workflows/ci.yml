@@ -1,33 +1,17 @@
 # .github/workflows/ci.yml
-name: Continuous Integration
-
+name: CI
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   build:
-    name: Test on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
-
+    runs-on: ubuntu-latest
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        global-json-file: global.json
-
-    - name: Restore .NET tools
-      run: dotnet tool restore
-
-    - name: Build sln
-      run: dotnet run .build/targets.cs build
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-dotnet@v4
+      - name: Run Pipeline
+        run: dotnet run --project .build/Build.csproj -- --target test

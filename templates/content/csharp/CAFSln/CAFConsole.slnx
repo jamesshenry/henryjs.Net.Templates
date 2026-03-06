@@ -11,4 +11,5 @@
     <Project Path="src/CAFConsole.Tests/CAFConsole.Tests.csproj" />
     <Project Path="src/CAFConsole/CAFConsole.csproj" />
   </Folder>
+  <Project Path=".build/_build.csproj" />
 </Solution>
