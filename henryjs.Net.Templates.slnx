@@ -2,5 +2,14 @@
   <Folder Name="/templates/">
     <Project Path="templates/henry-js.Net.Templates.csproj" />
   </Folder>
+  <Folder Name="/templates/content/" />
+  <Folder Name="/templates/content/csharp/" />
+  <Folder Name="/templates/content/csharp/CAFSln/" />
+  <Folder Name="/templates/content/csharp/CAFSln/.build/">
+    <Project Path="templates/content/csharp/CAFSln/.build/_build.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/build.Template.Tests/build.Template.Tests.csproj" />
+  </Folder>
   <Project Path=".build/_build.csproj" />
 </Solution>

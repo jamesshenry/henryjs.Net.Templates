@@ -21,9 +21,7 @@ public class RestoreModule(ProjectMetadata meta) : Module<CommandResult>
         var dir = await context
             .Git()
             .Commands.RevParse(new GitRevParseOptions() { ShowToplevel = true }, token: ct);
-#if DEBUG
-        Environment.CurrentDirectory = dir.StandardOutput.Trim();
-#endif
+
         context.Logger.LogDebug("CurrentDirectory: {Directory}", Environment.CurrentDirectory);
         context.Logger.LogDebug("Restoring slnx");
         return await context
